@@ -121,25 +121,23 @@
 #' 
 #' 
 #' 
-#' # Coverage-based standardized TD estimates and related statistics for every pair of 
-#' # assemblages by user-specified coverage values
-#' # See Example 3 in the iNEXT.beta3D vignette for details.
+#' # Coverage-based standardized TD estimates and related statistics for every pair of assemblages
+#' # See Example 3 in the iNEXT.beta3D vignette for details and graphical output.
 #' 
 #' data(Second_growth_forests)
-#' output_TDc_inci_byuser = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
+#' output_TDc_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
 #'                                      datatype = 'incidence_raw', base = "coverage", 
-#'                                      nboot = 10, level = c(0.9, 0.95), by_pair = TRUE)
-#' output_TDc_inci_byuser
+#'                                      nboot = 10, by_pair = TRUE)
+#' output_TDc_inci_pair
 #' 
 #'
-#' # Size-based standardized TD estimates and related statistics for every pair of 
-#' # assemblages by user-specified sample sizes
+#' # Size-based standardized TD estimates and related statistics for every pair of assemblages
 #' 
 #' data(Second_growth_forests)
-#' output_TDs_inci_byuser = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
+#' output_TDs_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
 #'                                      datatype = 'incidence_raw', base = "size", 
-#'                                      nboot = 10, level = c(100, 200), by_pair = TRUE)
-#' output_TDs_inci_byuser
+#'                                      nboot = 10, by_pair = TRUE)
+#' output_TDs_inci_pair
 #' 
 #' 
 #' }
@@ -3687,9 +3685,10 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
 
 #' ggplot2 extension for the iNEXTbeta3D object
 #' 
-#' \code{ggiNEXTbeta3D} is a \code{ggplot2} extension for the \code{iNEXTbeta3D} 
-#' object to plot sample-size- and coverage-based rarefaction/extrapolation curves.
-#' (This function only accepts the output from \code{iNEXTbeta3D} with \code{by_pair = FALSE})
+#' \code{ggiNEXTbeta3D} is a \code{ggplot2} extension for the \code{iNEXTbeta3D} object to plot sample-size- and coverage-based rarefaction/extrapolation curves.
+#' For output generated with \code{by_pair = FALSE}, a single \code{ggplot} object is returned. For output generated with \code{by_pair = TRUE}, a list of \code{ggplot} objects is returned,
+#' with one plot for each dataset and different assemblage pairs distinguished by color.
+#' 
 #' 
 #' @param output output from the function \code{iNEXTbeta3D}.
 #' @param type (argument only for \code{base = "coverage"}),\cr
@@ -3697,9 +3696,11 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
 #' \code{type = 'D'} for plotting the rarefaction and extrapolation sampling curves for four dissimilarity indices.\cr
 #' Skip the argument for plotting size-based rarefaction and extrapolation sampling curves for gamma and alpha diversity.
 #' 
-#' @return  A figure showing gamma, alpha, and beta diversity or the four dissimilarity
-#' indices when \code{base = "coverage"}, or a figure showing gamma and alpha diversity
-#' when \code{base = "size"}.
+#' @return For output generated with \code{by_pair = FALSE}, a single \code{ggplot} object is returned. For output generated with \code{by_pair = TRUE}, a named list of \code{ggplot} objects is returned,
+#' with one plot for each dataset and different assemblage pairs distinguished by color.
+#' For \code{base = "coverage"}, the plots show gamma, alpha, and beta diversity (\code{type = "B"}) or four dissimilarity indices (\code{type = "D"});
+#' for \code{base = "size"}, the plots show gamma and alpha diversity.
+#'
 #' 
 #' @examples
 #' \donttest{
@@ -3743,6 +3744,22 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
 #'                               datatype = 'incidence_raw', base = "size", nboot = 10)
 #' 
 #' ggiNEXTbeta3D(output_TDs_inci)
+#'
+#'
+#'
+#' # Coverage-based rarefaction and extrapolation sampling curves for every pair of assemblages
+#' # See Example 3 in the iNEXT.beta3D vignette for details.
+#'
+#' output_TDc_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD',
+#'                                    datatype = 'incidence_raw', base = "coverage",
+#'                                    nboot = 10, by_pair = TRUE)
+#'
+#' plot_TDc_inci_pair = ggiNEXTbeta3D(output_TDc_inci_pair, type = 'B')
+#' names(plot_TDc_inci_pair)
+#' plot_TDc_inci_pair[["CR_2005_2011_2017"]]
+#' plot_TDc_inci_pair[["JE_2005_2011_2017"]]
+#'
+#'
 #' 
 #' ## (Graphic Display) Phylogenetic diversity for abundance data
 #' # Coverage-based rarefaction and extrapolation sampling curves 
@@ -3801,17 +3818,48 @@ ggiNEXTbeta3D = function(output, type = 'B'){
   
   transp = 0.4
   
-  # Check if the number of unique 'Assemblage' is 8 or less
-  if (length(output) <= 8){
-    cbPalette <- rev(c("#999999", "#E69F00", "#56B4E9", "#009E73", 
-                       "#330066", "#CC79A7", "#0072B2", "#D55E00"))
-  }else{
-    # If there are more than 8 assemblages, start with the same predefined color palette
-    # Then extend the palette by generating additional colors using the 'ggplotColors' function
-    cbPalette <- rev(c("#999999", "#E69F00", "#56B4E9", "#009E73", 
-                       "#330066", "#CC79A7", "#0072B2", "#D55E00"))
-    cbPalette <- c(cbPalette, ggplotColors(length(output)-8))
+  get_double_extrapolation <- function(df){
+    group_vars <- c("Dataset","Order.q","div_type")
+    if("Pair" %in% colnames(df)) group_vars <- c("Dataset","Pair","Order.q","div_type")
+    obs <- df %>% filter(Method=="Observed") %>% select(all_of(group_vars), obs_size=Size) %>% distinct()
+    df %>% filter(Method=="Extrapolation") %>% left_join(obs, by=group_vars) %>% filter(!is.na(obs_size), round(Size)==round(2*obs_size))
   }
+  
+  make_single_plot <- function(df, xvar, xlab, ylab){
+    lty <- c(Rarefaction="solid", Extrapolation="dashed")
+    df$Method <- factor(df$Method, levels=c("Rarefaction","Extrapolation","Observed"))
+
+    if("Pair" %in% colnames(df)) df$PlotGroup <- df$Pair else df$PlotGroup <- df$Dataset
+    n_group <- length(unique(df$PlotGroup))
+    cbPalette <- rev(c("#999999","#E69F00","#56B4E9","#009E73","#330066","#CC79A7","#0072B2","#D55E00"))
+    if(n_group > 8) cbPalette <- c(cbPalette, ggplotColors(n_group-8)) else cbPalette <- cbPalette[1:n_group]
+    double_extrapolation <- get_double_extrapolation(df)
+    
+    if(xvar=="SC"){
+      fig <- ggplot(df, aes(x=SC, y=Estimate, col=PlotGroup, group=interaction(PlotGroup,div_type,Order.q,Method)))
+      } else {
+        fig <- ggplot(df, aes(x=Size, y=Estimate, col=PlotGroup, group=interaction(PlotGroup,div_type,Order.q,Method)))
+      }
+    fig <- fig +
+      geom_line(data=subset(df, Method!="Observed"), aes(linetype=Method), size=1.1) +
+      scale_linetype_manual(values=lty) +
+      geom_point(data=subset(df, Method=="Observed" & div_type=="Gamma"), shape=19, size=3) +
+      geom_point(data=subset(df, Method=="Observed" & div_type!="Gamma"), shape=1, size=3, stroke=1.5) +
+      geom_point(data=subset(double_extrapolation, div_type=="Gamma"), shape=17, size=3) +
+      geom_point(data=subset(double_extrapolation, div_type!="Gamma"), shape=2, size=3, stroke=1.5) +
+      scale_colour_manual(values=cbPalette) + scale_fill_manual(values=cbPalette) +
+      facet_grid(div_type ~ Order.q, scales="free") + theme_bw() +
+      theme(legend.position="bottom", legend.title=element_blank(), strip.text=element_text(size=15,face="bold"),
+            axis.title=element_text(hjust=.5,size=15,face="bold"), axis.text.x=element_text(size=12),
+            axis.text.y=element_text(size=12), legend.box="vertical", legend.text=element_text(size=13)) +
+      labs(x=xlab, y=ylab) + guides(linetype=guide_legend(keywidth=2.5))
+    
+    if(sum(!is.na(df$LCL))>0) fig <- fig + geom_ribbon(aes(ymin=LCL,ymax=UCL, fill=PlotGroup,
+                                                           group=interaction(PlotGroup,div_type,Order.q),col=NULL), alpha=transp)
+    
+    return(fig)
+  }
+
   
   if ((length(output[[1]]) == 7 & type == "B") | (length(output[[1]]) == 2)) {
     
@@ -4087,40 +4135,18 @@ ggiNEXTbeta3D = function(output, type = 'B'){
       
     }
     
-    lty = c(Rarefaction = "solid", Extrapolation = "dashed")
-    df$Method = factor(df$Method, levels = c('Rarefaction', 'Extrapolation', 'Observed'))
+    df$Method <- factor(df$Method, levels=c("Rarefaction","Extrapolation","Observed"))
     
-    double_size = unique(df[df$Method == "Observed",]$Size)*2
-    double_extrapolation = df %>% filter(Method == "Extrapolation" & round(Size) %in% double_size)
-    
-    if ("Pair" %in% colnames(df)) stop("Due to too much data points under 'by_pair = TRUE', 'ggiNEXTbeta3D' don't plot the figure.", call. = FALSE)
-    
-    fig = ggplot(data = df, aes(x = SC, y = Estimate, col = Dataset)) +
-      geom_line(data = subset(df, Method != 'Observed'), aes(linetype = Method), size=1.1) + scale_linetype_manual(values = lty) +
-      # geom_line(lty=2) + 
-      geom_point(data = subset(df, Method == 'Observed' & div_type == "Gamma"), shape = 19, size = 3) + 
-      geom_point(data = subset(df, Method == 'Observed' & div_type != "Gamma"), shape = 1, size = 3, stroke = 1.5)+
-      geom_point(data = subset(double_extrapolation, div_type == "Gamma"), shape = 17, size = 3) + 
-      geom_point(data = subset(double_extrapolation, div_type != "Gamma"), shape = 2, size = 3, stroke = 1.5) + 
-      scale_colour_manual(values = cbPalette) + 
-      scale_fill_manual(values = cbPalette) + 
-      facet_grid(div_type ~ Order.q, scales = 'free') +
-      theme_bw() + 
-      theme(legend.position = "bottom", 
-            legend.title = element_blank(),
-            strip.text = element_text(size = 15, face = 'bold'),
-            axis.title = element_text(hjust = 0.5, size = 15, face = 'bold'),
-            axis.text.x = element_text(size = 12),
-            axis.text.y = element_text(size = 12),
-            legend.box = "vertical",
-            legend.margin = margin(0, 0, 0, 0),
-            legend.box.margin = margin(-10, -10, -5, -10),
-            legend.text = element_text(size = 13),
-            plot.margin = unit(c(5.5, 5.5, 5.5, 5.5), "pt")) +
-      labs(x = 'Sample coverage', y = ylab) +
-      guides(linetype = guide_legend(keywidth = 2.5))
-    
-    if (sum(is.na(df$LCL) == 0)) fig = fig + geom_ribbon(aes(ymin = LCL, ymax = UCL, fill = Dataset, col = NULL), alpha = transp)
+    if("Pair" %in% colnames(df)){
+      dataset_names <- unique(df$Dataset)
+      fig <- lapply(dataset_names, function(dd){
+        df_dataset <- df %>% filter(Dataset==dd)
+        make_single_plot(df_dataset, "SC", "Sample coverage", ylab) + ggtitle(dd)
+      })
+      names(fig) <- dataset_names
+    } else {
+      fig <- make_single_plot(df, "SC", "Sample coverage", ylab)
+    }
     
   } else if (length(output[[1]]) == 2) {
     
@@ -4157,39 +4183,19 @@ ggiNEXTbeta3D = function(output, type = 'B'){
       }
     }
     
-    lty = c(Rarefaction = "solid", Extrapolation = "dashed")
-    df$Method = factor(df$Method, levels = c('Rarefaction', 'Extrapolation', 'Observed'))
+    df$Method <- factor(df$Method, levels=c("Rarefaction","Extrapolation","Observed"))
     
-    double_size = unique(df[df$Method == "Observed",]$Size)*2
-    double_extrapolation = df %>% filter(Method == "Extrapolation" & round(Size) %in% double_size)
+    if("Pair" %in% colnames(df)){
+      dataset_names <- unique(df$Dataset)
+      fig <- lapply(dataset_names, function(dd){
+        df_dataset <- df %>% filter(Dataset==dd)
+        make_single_plot(df_dataset, "Size", xlab, ylab) + ggtitle(dd)
+      })
+      names(fig) <- dataset_names
+    } else {
+      fig <- make_single_plot(df, "Size", xlab, ylab)
+    }
     
-    if ("Pair" %in% colnames(df)) stop("Due to too much data points under 'by_pair = TRUE', 'ggiNEXTbeta3D' don't plot the figure.", call. = FALSE)
-    
-    fig = ggplot(data = df, aes(x = Size, y = Estimate, col = Dataset)) +
-      geom_line(data = subset(df, Method != 'Observed'), aes(linetype = Method), size=1.1) + scale_linetype_manual(values = lty) +
-      geom_point(data = subset(df, Method == 'Observed' & div_type == "Gamma"), shape = 19, size = 3) + 
-      geom_point(data = subset(df, Method == 'Observed' & div_type != "Gamma"), shape = 1, size = 3, stroke = 1.5) +
-      geom_point(data = subset(double_extrapolation, div_type == "Gamma"), shape = 17, size = 3) + 
-      geom_point(data = subset(double_extrapolation, div_type != "Gamma"), shape = 2, size = 3, stroke = 1.5) + 
-      scale_colour_manual(values = cbPalette) + 
-      scale_fill_manual(values = cbPalette) + 
-      facet_grid(div_type ~ Order.q, scales = 'free') +
-      theme_bw() + 
-      theme(legend.position = "bottom", 
-            legend.title = element_blank(),
-            strip.text = element_text(size = 15, face = 'bold'),
-            axis.title = element_text(hjust = 0.5, size = 15, face = 'bold'),
-            axis.text.x = element_text(size = 12),
-            axis.text.y = element_text(size = 12),
-            legend.box = "vertical",
-            legend.margin = margin(0, 0, 0, 0),
-            legend.box.margin = margin(-10, -10, -5, -10),
-            legend.text = element_text(size = 13),
-            plot.margin = unit(c(5.5, 5.5, 5.5, 5.5), "pt")) +
-      labs(x = xlab, y = ylab) +
-      guides(linetype = guide_legend(keywidth = 2.5))
-    
-    if (sum(is.na(df$LCL) == 0)) fig = fig + geom_ribbon(aes(ymin = LCL, ymax = UCL, fill = Dataset, col = NULL), alpha = transp)
   }
   
   return(fig)

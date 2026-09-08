@@ -15,14 +15,15 @@ ggiNEXTbeta3D(output, type = "B")
 Skip the argument for plotting size-based rarefaction and extrapolation sampling curves for gamma and alpha diversity.}
 }
 \value{
-A figure showing gamma, alpha, and beta diversity or the four dissimilarity
-indices when \code{base = "coverage"}, or a figure showing gamma and alpha diversity
-when \code{base = "size"}.
+For output generated with \code{by_pair = FALSE}, a single \code{ggplot} object is returned. For output generated with \code{by_pair = TRUE}, a named list of \code{ggplot} objects is returned,
+with one plot for each dataset and different assemblage pairs distinguished by color.
+For \code{base = "coverage"}, the plots show gamma, alpha, and beta diversity (\code{type = "B"}) or four dissimilarity indices (\code{type = "D"});
+for \code{base = "size"}, the plots show gamma and alpha diversity.
 }
 \description{
-\code{ggiNEXTbeta3D} is a \code{ggplot2} extension for the \code{iNEXTbeta3D} 
-object to plot sample-size- and coverage-based rarefaction/extrapolation curves.
-(This function only accepts the output from \code{iNEXTbeta3D} with \code{by_pair = FALSE})
+\code{ggiNEXTbeta3D} is a \code{ggplot2} extension for the \code{iNEXTbeta3D} object to plot sample-size- and coverage-based rarefaction/extrapolation curves.
+For output generated with \code{by_pair = FALSE}, a single \code{ggplot} object is returned. For output generated with \code{by_pair = TRUE}, a list of \code{ggplot} objects is returned,
+with one plot for each dataset and different assemblage pairs distinguished by color.
 }
 \examples{
 \donttest{
@@ -66,6 +67,22 @@ output_TDs_inci = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD',
                               datatype = 'incidence_raw', base = "size", nboot = 10)
 
 ggiNEXTbeta3D(output_TDs_inci)
+
+
+
+# Coverage-based rarefaction and extrapolation sampling curves for every pair of assemblages
+# See Example 3 in the iNEXT.beta3D vignette for details.
+
+output_TDc_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD',
+                                   datatype = 'incidence_raw', base = "coverage",
+                                   nboot = 10, by_pair = TRUE)
+
+plot_TDc_inci_pair = ggiNEXTbeta3D(output_TDc_inci_pair, type = 'B')
+names(plot_TDc_inci_pair)
+plot_TDc_inci_pair[["CR_2005_2011_2017"]]
+plot_TDc_inci_pair[["JE_2005_2011_2017"]]
+
+
 
 ## (Graphic Display) Phylogenetic diversity for abundance data
 # Coverage-based rarefaction and extrapolation sampling curves 

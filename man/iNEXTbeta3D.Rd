@@ -144,25 +144,23 @@ output_TDs_inci
 
 
 
-# Coverage-based standardized TD estimates and related statistics for every pair of 
-# assemblages by user-specified coverage values
-# See Example 3 in the iNEXT.beta3D vignette for details.
+# Coverage-based standardized TD estimates and related statistics for every pair of assemblages
+# See Example 3 in the iNEXT.beta3D vignette for details and graphical output.
 
 data(Second_growth_forests)
-output_TDc_inci_byuser = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
+output_TDc_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
                                      datatype = 'incidence_raw', base = "coverage", 
-                                     nboot = 10, level = c(0.9, 0.95), by_pair = TRUE)
-output_TDc_inci_byuser
+                                     nboot = 10, by_pair = TRUE)
+output_TDc_inci_pair
 
 
-# Size-based standardized TD estimates and related statistics for every pair of 
-# assemblages by user-specified sample sizes
+# Size-based standardized TD estimates and related statistics for every pair of assemblages
 
 data(Second_growth_forests)
-output_TDs_inci_byuser = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
+output_TDs_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
                                      datatype = 'incidence_raw', base = "size", 
-                                     nboot = 10, level = c(100, 200), by_pair = TRUE)
-output_TDs_inci_byuser
+                                     nboot = 10, by_pair = TRUE)
+output_TDs_inci_pair
 
 
 }
