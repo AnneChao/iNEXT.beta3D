@@ -26,8 +26,8 @@
 #' @param nboot a positive integer specifying the number of bootstrap replications when assessing sampling uncertainty and constructing confidence intervals. Bootstrap replications are generally time consuming. Set \code{nboot = 0} to skip the bootstrap procedures. Default is \code{nboot = 10}. If more accurate results are required, set \code{nboot = 100} (or \code{nboot = 200}).
 #' @param conf a positive number < 1 specifying the level of confidence interval. Default is 0.95.
 #' @param PDtree (required argument for \code{diversity = "PD"}), a phylogenetic tree in Newick format spanned by all observed species across the input datasets.
-#' @param PDreftime (argument only for \code{diversity = "PD"} and \code{PDtype = "PD"} or \code{PDtype = "meanPD"}), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is \code{PDreftime = NULL}, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
-#' @param PDtype (argument only for \code{diversity = "PD"}), select PD type: \code{PDtype = "PD"} for effective total branch length, \code{PDtype = "meanPD"} for effective number of equally divergent lineages, or \code{PDtype = "AUC"} for an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. Default is \code{PDtype = "AUC"}.
+#' @param PDreftime (argument only for \code{diversity = "PD"} and \code{PDtype = "meanPD"}), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is \code{PDreftime = NULL}, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
+#' @param PDtype (argument only for \code{diversity = "PD"}), select PD type: \code{PDtype = "meanPD"} for effective number of equally divergent lineages, or \code{PDtype = "AUC"} for an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. Default is \code{PDtype = "AUC"}.
 #' @param PDcut_number (argument only for \code{diversity = "PD"} and \code{PDtype = "AUC"}), a positive integer larger than one specifying the number of equally spaced time reference points between zero and the age of the root used to numerically approximate the AUC. Default is \code{PDcut_number = 30}. A larger value can be used to obtain a more accurate AUC approximation.
 #' @param FDdistM (required argument for \code{diversity = "FD"}), a species pairwise distance matrix for all species in the pooled dataset. 
 #' @param FDtype (argument only for \code{diversity = "FD"}), select FD type: \code{FDtype = "tau_value"} for FD under a specified threshold value, or \code{FDtype = "AUC"} (area under the curve of tau-profile) for an overall FD which integrates all threshold values between zero and one. Default is \code{FDtype = "AUC"}.  
@@ -55,7 +55,7 @@
 #' @importFrom utils combn
 #' 
 #' @return For \code{base = "coverage"}, return a list of seven data frames with three diversity (gamma, alpha, and beta
-#'  diversity) and four dissimilarity measures. For \code{base = "size"}, return a list of two matrices with two diversity
+#'  diversity) and four dissimilarity measures. For \code{base = "size"}, return a list of two data frames with two diversity
 #'  (gamma and alpha diversity).\cr 
 #'  
 #'  For \code{base = "coverage"}, the output in each data frame includes: 
@@ -63,13 +63,13 @@
 #'  \item{Pair}{combinations of assemblage pairs; this column is included only when the analysis is performed for every pair of assemblages.}
 #'  \item{Order.q}{the diversity order of q.} 
 #'  \item{SC}{the target standardized coverage value.}
-#'  \item{Size/mT}{the corresponding sample size.}
-#'  \item{Alpha/Beta/Gamma/Dissimilarity}{the estimated diversity/dissimilarity estimate.}
+#'  \item{Size/mT}{the corresponding sample size for gamma and alpha diversity. This column is not included for beta diversity or dissimilarity indices.}
+#' \item{Alpha/Beta/Gamma/Dissimilarity}{ the estimated diversity/dissimilarity estimate. For \code{PDtype = "meanPD"}, the gamma output includes \code{Gamma_PD} and \code{Gamma_meanPD}, whereas the alpha output includes \code{Alpha_PD} and \code{Alpha_meanPD}, where \code{Gamma_PD = Gamma_meanPD * Reftime} and \code{Alpha_PD = Alpha_meanPD * Reftime}. Raw PD is retained as an auxiliary output for gamma and alpha diversity when \code{PDtype = "meanPD"}.}
 #'  \item{Method}{Rarefaction, Observed, or Extrapolation, depending on whether the target coverage is less than, equal to, or greater than the coverage of the reference sample.} 
 #'  \item{s.e.}{standard error of standardized estimate.}
 #'  \item{LCL, UCL}{the bootstrap lower and upper confidence limits for the diversity/dissimilarity with a default significance level of 0.95.}
-#'  \item{Diversity}{\code{'TD'} = 'Taxonomic diversity', \code{'PD'} = 'Phylogenetic diversity', \code{'meanPD'} = 'Mean phylogenetic diversity', \code{'PD_AUC'} = 'Phylogenetic diversity (AUC)', \code{'FD_tau'} = 'Functional diversity (given tau)', \code{'FD_AUC'} = 'Functional diversity (AUC)'}
-#'  \item{Reftime}{the reference time for PD under \code{PDtype = "PD"} or \code{PDtype = "meanPD"}.}
+#'  \item{Diversity}{\code{'TD'} = 'Taxonomic diversity', \code{'meanPD'} = 'Mean phylogenetic diversity', \code{'PD_AUC'} = 'Phylogenetic diversity (AUC)', \code{'FD_tau'} = 'Functional diversity (given tau)', \code{'FD_AUC'} = 'Functional diversity (AUC)'}
+#'  \item{Reftime}{the reference time for PD under \code{PDtype = "meanPD"}.}
 #'  \item{Tau}{the threshold of functional distinctiveness between any two species for FD (under \code{FDtype = "tau_value"}).}
 #'  Similar output is obtained for \code{base = "size"}.\cr
 #'  
@@ -236,8 +236,8 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
   if (length(PDreftime) > 1)
     stop("PDreftime can only accept a value instead of a vector.", call. = FALSE)
   
-  if(is.na(pmatch(PDtype, c("PD", "meanPD", "AUC"))))
-    stop("Incorrect phylogenetic diversity type. Please use 'PD', 'meanPD', or 'AUC'.", call. = FALSE)
+  if(is.na(pmatch(PDtype, c("meanPD", "AUC"))))
+    stop("Incorrect phylogenetic diversity type. Please use 'meanPD', or 'AUC'.", call. = FALSE)
   
   if (PDtype == "AUC") {if (!is.numeric(PDcut_number) || length(PDcut_number) != 1 || is.na(PDcut_number) || PDcut_number < 2 || PDcut_number %% 1 != 0) {stop("Invalid PDcut_number. PDcut_number should be a single integer larger than one.",call. = FALSE)}}
   
@@ -635,7 +635,7 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
     H_max = max(ape::node.depth.edgelength(mytree))
     
     
-    if (PDtype %in% c("PD", "meanPD")) {
+    if (PDtype == "meanPD") {
       if (is.null(PDreftime)) {
         
         reft = H_max
@@ -664,6 +664,7 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
     
   }
     
+
   for_each_dataset = function(data, dataset_name, N, level, by_pair = FALSE) {
     
     #data
@@ -918,8 +919,9 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
           aL_table_gamma = aL_gamma$treeNabu %>%
             dplyr::select(branch.abun, branch.length, tgroup)
           
-          gamma = iNEXT.3D:::PhD.m.est(ai = aL_table_gamma$branch.abun,Lis = as.matrix(aL_table_gamma$branch.length),
+          gamma = iNEXT.3D:::PhD.m.est(ai = aL_table_gamma$branch.abun, Lis = as.matrix(aL_table_gamma$branch.length),
                                        m = m_gamma, q = q, nt = n, reft = reft_i, cal = "PD") %>% t() %>% as.vector()
+          
           
           # Alpha
           aL_table_alpha = NULL
@@ -927,6 +929,7 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
           for (k in seq_len(N)) {
             
             x = data[data[, k] > 0, k]
+            
             names(x) = rownames(data)[data[, k] > 0]
             
             aL_alpha = iNEXT.3D:::phyBranchAL_Abu(phylo = tree, data = x, rootExtend = TRUE, refT = reft_i)
@@ -940,7 +943,8 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
           }
           
           alpha = (iNEXT.3D:::PhD.m.est(ai = aL_table_alpha$branch.abun, Lis = as.matrix(aL_table_alpha$branch.length),
-                                        m = m_alpha, q = q, nt = n, reft = reft_i, cal = "PD") / N ) %>% t() %>% as.vector()
+                                        m = m_alpha, q = q, nt = n, reft = reft_i, cal = "PD") / N
+          ) %>% t() %>% as.vector()
         }
         
         
@@ -950,15 +954,17 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
           gamma_raw[gamma_raw > 1] = 1
           
           # Gamma
-          aL_gamma = iNEXT.3D:::phyBranchAL_Inc(phylo = tree,data = as.matrix(gamma_raw),datatype = "incidence_raw",rootExtend = TRUE,refT = reft_i)
+          aL_gamma = iNEXT.3D:::phyBranchAL_Inc(phylo = tree, data = as.matrix(gamma_raw), datatype = "incidence_raw",
+                                                rootExtend = TRUE, refT = reft_i)
           
           aL_gamma$treeNabu$branch.length = aL_gamma$BLbyT[, 1]
           
           aL_table_gamma = aL_gamma$treeNabu %>%
             dplyr::select(branch.abun, branch.length, tgroup)
           
-          gamma = iNEXT.3D:::PhD.m.est(ai = aL_table_gamma$branch.abun, Lis = as.matrix(aL_table_gamma$branch.length),
+          gamma = iNEXT.3D:::PhD.m.est(ai = aL_table_gamma$branch.abun,Lis = as.matrix(aL_table_gamma$branch.length),
                                        m = m_gamma, q = q, nt = n, reft = reft_i, cal = "PD") %>% t() %>% as.vector()
+          
           
           # Alpha
           aL_table_alpha = NULL
@@ -971,65 +977,103 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
             
             aL_alpha$treeNabu$branch.length = aL_alpha$BLbyT[, 1]
             
-            aL_table_k = aL_alpha$treeNabu %>%
-              dplyr::select(branch.abun, branch.length, tgroup)
+            aL_table_k = aL_alpha$treeNabu %>% dplyr::select(branch.abun, branch.length, tgroup)
             
-            aL_table_alpha = rbind(aL_table_alpha,aL_table_k)
+            aL_table_alpha = rbind(aL_table_alpha, aL_table_k)
           }
           
-          alpha = (iNEXT.3D:::PhD.m.est(ai = aL_table_alpha$branch.abun, Lis = as.matrix(aL_table_alpha$branch.length),
-                                        m = m_alpha, q = q, nt = n, reft = reft_i, cal = "PD") / N ) %>% t() %>% as.vector()
+          alpha = (
+            iNEXT.3D:::PhD.m.est(ai = aL_table_alpha$branch.abun, Lis = as.matrix(aL_table_alpha$branch.length),
+                                 m = m_alpha, q = q, nt = n, reft = reft_i, cal = "PD") / N) %>% t() %>% as.vector()
         }
         
         gamma = gamma / reft_i
         alpha = alpha / reft_i
         
-        return(data.frame(gamma, alpha))
+        return(data.frame(gamma = gamma, alpha = alpha))
       }
       
       PD_AUC_by_data = function(data, tree, datatype, m_gamma, m_alpha) {
         
-        gamma_alpha_over_time = lapply(PDcut,
-                                       function(reft_i) {PD_by_time(data = data, tree = tree, reft_i = reft_i, datatype = datatype,
-                                                                    m_gamma = m_gamma, m_alpha = m_alpha)})
+        gamma_alpha_over_time = lapply(
+          PDcut,
+          function(reft_i) {
+            PD_by_time(
+              data = data,
+              tree = tree,
+              reft_i = reft_i,
+              datatype = datatype,
+              m_gamma = m_gamma,
+              m_alpha = m_alpha
+            )
+          }
+        )
         
-        gamma_over_time = sapply(gamma_alpha_over_time,function(x) x$gamma)
+        gamma_over_time = sapply(
+          gamma_alpha_over_time,
+          function(x) x$gamma
+        )
         
-        alpha_over_time = sapply(gamma_alpha_over_time,function(x) x$alpha)
+        alpha_over_time = sapply(
+          gamma_alpha_over_time,
+          function(x) x$alpha
+        )
         
-        if (is.vector(gamma_over_time)) {gamma_over_time = matrix(gamma_over_time,nrow = 1)}
+        if (is.vector(gamma_over_time)) {
+          gamma_over_time = matrix(gamma_over_time, nrow = 1)
+        }
         
-        if (is.vector(alpha_over_time)) {alpha_over_time = matrix(alpha_over_time,nrow = 1)}
+        if (is.vector(alpha_over_time)) {
+          alpha_over_time = matrix(alpha_over_time, nrow = 1)
+        }
         
+        # Beta: first gamma / alpha at each reference time
         beta_over_time = gamma_over_time / alpha_over_time
         
-        gamma_left = gamma_over_time[,-ncol(gamma_over_time),drop = FALSE]
+        # Left and right endpoints for trapezoidal integration
+        gamma_left  = gamma_over_time[, -ncol(gamma_over_time), drop = FALSE]
+        gamma_right = gamma_over_time[, -1, drop = FALSE]
         
-        gamma_right = gamma_over_time[,-1,drop = FALSE]
+        alpha_left  = alpha_over_time[, -ncol(alpha_over_time), drop = FALSE]
+        alpha_right = alpha_over_time[, -1, drop = FALSE]
         
-        alpha_left = alpha_over_time[,-ncol(alpha_over_time),drop = FALSE]
+        beta_left   = beta_over_time[, -ncol(beta_over_time), drop = FALSE]
+        beta_right  = beta_over_time[, -1, drop = FALSE]
         
-        alpha_right = alpha_over_time[,-1,drop = FALSE]
+        width_matrix = matrix(
+          PDwidth,
+          nrow = nrow(gamma_over_time),
+          ncol = length(PDwidth),
+          byrow = TRUE
+        )
         
-        beta_left = beta_over_time[, -ncol(beta_over_time),drop = FALSE]
+        gamma = rowSums(
+          ((gamma_left + gamma_right) / 2) * width_matrix
+        ) / sum(PDwidth)
         
-        beta_right = beta_over_time[, -1,drop = FALSE]
+        alpha = rowSums(
+          ((alpha_left + alpha_right) / 2) * width_matrix
+        ) / sum(PDwidth)
         
-        width_matrix = matrix(PDwidth,nrow = nrow(gamma_over_time),ncol = length(PDwidth),byrow = TRUE)
+        beta = rowSums(
+          ((beta_left + beta_right) / 2) * width_matrix
+        ) / sum(PDwidth)
         
-        gamma = rowSums(((gamma_left + gamma_right) / 2) * width_matrix) / sum(PDwidth)
-        
-        alpha = rowSums(((alpha_left + alpha_right) / 2) * width_matrix) / sum(PDwidth)
-        
-        beta = rowSums(((beta_left + beta_right) / 2) * width_matrix) / sum(PDwidth)
-        
-        return(list(gamma = gamma, alpha = alpha, beta = beta))
+        return(
+          list(
+            gamma = gamma,
+            alpha = alpha,
+            beta = beta
+          )
+        )
       }
+      
+
       
       
       if(PDtype == "AUC"){
         
-        PD_auc = PD_AUC_by_data(data = data, tree = PDtree, datatype = datatype, m_gamma = m_gamma, m_alpha = m_alpha)
+        PD_auc <- PD_AUC_by_data(data = data, tree = PDtree, datatype = datatype, m_gamma = m_gamma, m_alpha = m_alpha)
         
         gamma = data.frame(Order.q = rep(q, each = length(level)), Estimate = PD_auc$gamma,
                            SC = rep(level, times = length(q)), Size = rep(m_gamma, times = length(q)))
@@ -1123,8 +1167,11 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
       alpha$Order.q = as.numeric(alpha$Order.q)
       
       if (PDtype == 'meanPD') {
-        gamma$Estimate = gamma$Estimate/reft
-        alpha$Estimate = alpha$Estimate/reft
+        gamma$PD = gamma$Estimate
+        alpha$PD = alpha$Estimate
+        
+        gamma$Estimate = gamma$PD / reft
+        alpha$Estimate = alpha$PD / reft
       }
       
       beta = alpha
@@ -1482,8 +1529,8 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
           
           
           if (PDtype == 'meanPD') {
-            gamma = gamma/reft
-            alpha = alpha/reft
+            gamma = gamma / reft
+            alpha = alpha / reft
           } 
           
           if (PDtype != "AUC") {
@@ -2143,7 +2190,6 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
     se = as.data.frame(se)
     
     if (diversity == "TD") index = "TD"
-    if (diversity == "PD" & PDtype == "PD") index = "PD"
     if (diversity == "PD" & PDtype == "meanPD") index = "meanPD"
     if (diversity == "PD" & PDtype == "AUC") index = "PD_AUC"
     if (diversity == "FD" & FDtype == "tau_value") index = "FD_tau"
@@ -2154,28 +2200,43 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
                              UCL = Estimate + tmp * se$gamma,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, SC) %>% .[,c(9, 2, 4, 5, 1, 3, 6, 7, 8, 10)] %>% rename("Gamma" = "Estimate")
+      arrange(Order.q, SC) %>% select(Dataset, Order.q, SC, Size, any_of("PD"), Estimate, Method, s.e., LCL, UCL, Diversity)
     
     alpha = alpha %>% mutate(s.e. = se$alpha,
                              LCL = Estimate - tmp * se$alpha,
                              UCL = Estimate + tmp * se$alpha,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, SC) %>% .[,c(9, 2, 4, 5, 1, 3, 6, 7, 8, 10)] %>% rename("Alpha" = "Estimate")
+      arrange(Order.q, SC) %>% select(Dataset, Order.q, SC, Size, any_of("PD"), Estimate, Method, s.e., LCL, UCL, Diversity)
+    
+    if (diversity == "PD" & PDtype == "meanPD") {
+      gamma = gamma %>%
+        rename(Gamma_meanPD = Estimate, Gamma_PD = PD)
+      
+      alpha = alpha %>%
+        rename(Alpha_meanPD = Estimate, Alpha_PD = PD)
+      
+    } else {
+      gamma = gamma %>% rename(Gamma = Estimate)
+      
+      alpha = alpha %>% rename(Alpha = Estimate)
+    }
     
     beta = beta %>% mutate(  s.e. = se$beta,
                              LCL = Estimate - tmp * se$beta,
                              UCL = Estimate + tmp * se$beta,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, SC) %>% .[,c(9, 2, 4, 5, 1, 3, 6, 7, 8, 10)] %>% rename("Beta" = "Estimate")
+      arrange(Order.q, SC) %>% select(Dataset, Order.q, SC, Size, Estimate,
+                                      Method, s.e., LCL, UCL, Diversity) %>% rename("Beta" = "Estimate")
     
     C = C %>% mutate(        s.e. = se$C,
                              LCL = Estimate - tmp * se$C,
                              UCL = Estimate + tmp * se$C,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, SC) %>% .[,c(9, 2, 4, 5, 1, 3, 6, 7, 8, 10)] %>% rename("Dissimilarity" = "Estimate")
+      arrange(Order.q, SC) %>% select(Dataset, Order.q, SC, Size, Estimate,
+                                      Method, s.e., LCL, UCL, Diversity) %>% rename("Dissimilarity" = "Estimate")
     
     
     U = U %>% mutate(        s.e. = se$U,
@@ -2183,21 +2244,24 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
                              UCL = Estimate + tmp * se$U,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, SC) %>% .[,c(9, 2, 4, 5, 1, 3, 6, 7, 8, 10)] %>% rename("Dissimilarity" = "Estimate")
+      arrange(Order.q, SC) %>% select(Dataset, Order.q, SC, Size, Estimate,
+                                      Method, s.e., LCL, UCL, Diversity) %>% rename("Dissimilarity" = "Estimate")
     
     V = V %>% mutate(        s.e. = se$V,
                              LCL = Estimate - tmp * se$V,
                              UCL = Estimate + tmp * se$V,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, SC) %>% .[,c(9, 2, 4, 5, 1, 3, 6, 7, 8, 10)] %>% rename("Dissimilarity" = "Estimate")
+      arrange(Order.q, SC) %>% select(Dataset, Order.q, SC, Size, Estimate,
+                                      Method, s.e., LCL, UCL, Diversity) %>% rename("Dissimilarity" = "Estimate")
     
     S = S %>% mutate(        s.e. = se$S,
                              LCL = Estimate - tmp * se$S,
                              UCL = Estimate + tmp * se$S,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, SC) %>% .[,c(9, 2, 4, 5, 1, 3, 6, 7, 8, 10)] %>% rename("Dissimilarity" = "Estimate")
+      arrange(Order.q, SC) %>% select(Dataset, Order.q, SC, Size, Estimate,
+                                      Method, s.e., LCL, UCL, Diversity) %>% rename("Dissimilarity" = "Estimate")
     
     
     if (trunc) {
@@ -2218,7 +2282,7 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
       
     }
     
-    if (diversity == "PD" & PDtype %in% c("PD", "meanPD")) {
+    if (diversity == "PD" & PDtype == "meanPD") {
       
       gamma = gamma %>% mutate(Reftime = reft)
       
@@ -2358,6 +2422,12 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
       S    =  S    %>% mutate('Pair' = paste(ab_name[1], ab_name[2], sep = " vs. "), .after = "Dataset")
       
     }
+    
+    beta = beta %>% select(-any_of(c("Size", "mT", "PD")))
+    C    = C    %>% select(-any_of(c("Size", "mT", "PD")))
+    U    = U    %>% select(-any_of(c("Size", "mT", "PD")))
+    V    = V    %>% select(-any_of(c("Size", "mT", "PD")))
+    S    = S    %>% select(-any_of(c("Size", "mT", "PD")))
     
     
     list(gamma = gamma, alpha = alpha, beta = beta, `1-C` = C, `1-U` = U, `1-V` = V, `1-S` = S)
@@ -2528,41 +2598,86 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
         
         return(data.frame(gamma = gamma, alpha = alpha))
       }
+      
       PD_AUC_by_data = function(data, tree, datatype, m_gamma, m_alpha) {
         
-        gamma_alpha_over_time = lapply(PDcut,
-                                       function(reft_i) {PD_by_time(data = data, tree = tree, reft_i = reft_i, datatype = datatype,
-                                                                    m_gamma = m_gamma, m_alpha = m_alpha)})
+        gamma_alpha_over_time = lapply(
+          PDcut,
+          function(reft_i) {
+            PD_by_time(
+              data = data,
+              tree = tree,
+              reft_i = reft_i,
+              datatype = datatype,
+              m_gamma = m_gamma,
+              m_alpha = m_alpha
+            )
+          }
+        )
         
-        gamma_over_time = sapply(gamma_alpha_over_time,function(x) x$gamma)
+        gamma_over_time = sapply(
+          gamma_alpha_over_time,
+          function(x) x$gamma
+        )
         
-        alpha_over_time = sapply(gamma_alpha_over_time,function(x) x$alpha)
+        alpha_over_time = sapply(
+          gamma_alpha_over_time,
+          function(x) x$alpha
+        )
         
-        if (is.vector(gamma_over_time)) {gamma_over_time = matrix(gamma_over_time,nrow = 1)}
+        if (is.vector(gamma_over_time)) {
+          gamma_over_time = matrix(gamma_over_time, nrow = 1)
+        }
         
-        if (is.vector(alpha_over_time)) {alpha_over_time = matrix(alpha_over_time,nrow = 1)}
+        if (is.vector(alpha_over_time)) {
+          alpha_over_time = matrix(alpha_over_time, nrow = 1)
+        }
         
-        gamma_left = gamma_over_time[,-ncol(gamma_over_time),drop = FALSE]
+        # Beta: first gamma / alpha at each reference time
+        beta_over_time = gamma_over_time / alpha_over_time
         
-        gamma_right = gamma_over_time[,-1,drop = FALSE]
+        # Left and right endpoints for trapezoidal integration
+        gamma_left  = gamma_over_time[, -ncol(gamma_over_time), drop = FALSE]
+        gamma_right = gamma_over_time[, -1, drop = FALSE]
         
-        alpha_left = alpha_over_time[,-ncol(alpha_over_time),drop = FALSE]
+        alpha_left  = alpha_over_time[, -ncol(alpha_over_time), drop = FALSE]
+        alpha_right = alpha_over_time[, -1, drop = FALSE]
         
-        alpha_right = alpha_over_time[,-1,drop = FALSE]
+        beta_left   = beta_over_time[, -ncol(beta_over_time), drop = FALSE]
+        beta_right  = beta_over_time[, -1, drop = FALSE]
         
-        width_matrix = matrix(PDwidth,nrow = nrow(gamma_over_time),ncol = length(PDwidth),byrow = TRUE)
+        width_matrix = matrix(
+          PDwidth,
+          nrow = nrow(gamma_over_time),
+          ncol = length(PDwidth),
+          byrow = TRUE
+        )
         
-        gamma = rowSums(((gamma_left + gamma_right) / 2) * width_matrix) / sum(PDwidth)
+        gamma = rowSums(
+          ((gamma_left + gamma_right) / 2) * width_matrix
+        ) / sum(PDwidth)
         
-        alpha = rowSums(((alpha_left + alpha_right) / 2) * width_matrix) / sum(PDwidth)
+        alpha = rowSums(
+          ((alpha_left + alpha_right) / 2) * width_matrix
+        ) / sum(PDwidth)
         
-        return(list(gamma = gamma, alpha = alpha))
+        beta = rowSums(
+          ((beta_left + beta_right) / 2) * width_matrix
+        ) / sum(PDwidth)
+        
+        return(
+          list(
+            gamma = gamma,
+            alpha = alpha,
+            beta = beta
+          )
+        )
       }
       
       
       if (PDtype == "AUC") {
         
-        PD_auc = PD_AUC_by_data(data = data,tree = PDtree,datatype = datatype,m_gamma = level,m_alpha = level)
+        PD_auc <- PD_AUC_by_data(data = data, tree = PDtree, datatype = datatype, m_gamma = level, m_alpha = level)
         
         
         if (datatype == "abundance") {
@@ -2683,8 +2798,11 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
       alpha$Order.q = as.numeric(alpha$Order.q)
       
       if (PDtype == 'meanPD') {
-        gamma$Estimate = gamma$Estimate/reft
-        alpha$Estimate = alpha$Estimate/reft
+        gamma$PD = gamma$Estimate
+        alpha$PD = alpha$Estimate
+        
+        gamma$Estimate = gamma$PD / reft
+        alpha$Estimate = alpha$PD / reft
       }
       
       # beta = alpha
@@ -3007,8 +3125,8 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
           }
           
           if (PDtype == 'meanPD') {
-            gamma = gamma/reft
-            alpha = alpha/reft
+            gamma = gamma / reft
+            alpha = alpha / reft
           } 
           
           # beta = gamma/alpha
@@ -3560,7 +3678,6 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
     se = as.data.frame(se)
     
     if (diversity == "TD") index = "TD"
-    if (diversity == "PD" & PDtype == "PD") index = "PD"
     if (diversity == "PD" & PDtype == "meanPD") index = "meanPD"
     if (diversity == "PD" & PDtype == "AUC") index = "PD_AUC"
     if (diversity == "FD" & FDtype == "tau_value") index = "FD_tau"
@@ -3571,14 +3688,27 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
                              UCL = Estimate + tmp * se$gamma,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, Size) %>% .[,c(9, 2, 5, 4, 1, 3, 6, 7, 8, 10)] %>% rename("Gamma" = "Estimate")
+      arrange(Order.q, Size) %>% select(Dataset, Order.q, SC, Size, any_of("PD"), Estimate, Method, s.e., LCL, UCL, Diversity)
     
     alpha = alpha %>% mutate(s.e. = se$alpha,
                              LCL = Estimate - tmp * se$alpha,
                              UCL = Estimate + tmp * se$alpha,
                              Dataset = dataset_name,
                              Diversity = index) %>% 
-      arrange(Order.q, Size) %>% .[,c(9, 2, 5, 4, 1, 3, 6, 7, 8, 10)] %>% rename("Alpha" = "Estimate")
+      arrange(Order.q, Size) %>% select(Dataset, Order.q, SC, Size, any_of("PD"), Estimate, Method, s.e., LCL, UCL, Diversity)
+    
+    if (diversity == "PD" & PDtype == "meanPD") {
+      gamma = gamma %>%
+        rename(Gamma_meanPD = Estimate, Gamma_PD = PD)
+      
+      alpha = alpha %>%
+        rename(Alpha_meanPD = Estimate, Alpha_PD = PD)
+      
+    } else {
+      gamma = gamma %>% rename(Gamma = Estimate)
+      
+      alpha = alpha %>% rename(Alpha = Estimate)
+    }
     
     if (datatype == 'incidence_raw') {
       
@@ -3586,7 +3716,7 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
       alpha = alpha %>% rename("mT" = "Size")
     }
     
-    if (diversity == "PD" & PDtype %in% c("PD", "meanPD")) {
+    if (diversity == "PD" & PDtype == "meanPD") {
       
       gamma = gamma %>% mutate(Reftime = reft)
       
@@ -3818,6 +3948,28 @@ ggiNEXTbeta3D = function(output, type = 'B'){
   
   transp = 0.4
   
+  add_alpha_size <- function(y, tmp) {
+    
+    alpha_size <- y[["alpha"]]
+    
+    if ("mT" %in% colnames(alpha_size)) {
+      alpha_size <- alpha_size %>% rename(Size = mT)
+    }
+    
+    join_vars <- c("Dataset", "Order.q", "SC")
+    
+    if ("Pair" %in% colnames(tmp) && "Pair" %in% colnames(alpha_size)) {
+      join_vars <- c("Dataset", "Pair", "Order.q", "SC")
+    }
+    
+    alpha_size <- alpha_size %>%
+      select(all_of(join_vars), Size) %>%
+      distinct()
+    
+    tmp %>%
+      left_join(alpha_size, by = join_vars)
+  }
+  
   get_double_extrapolation <- function(df){
     group_vars <- c("Dataset","Order.q","div_type")
     if("Pair" %in% colnames(df)) group_vars <- c("Dataset","Pair","Order.q","div_type")
@@ -3831,7 +3983,7 @@ ggiNEXTbeta3D = function(output, type = 'B'){
 
     if("Pair" %in% colnames(df)) df$PlotGroup <- df$Pair else df$PlotGroup <- df$Dataset
     n_group <- length(unique(df$PlotGroup))
-    cbPalette <- rev(c("#999999","#E69F00","#56B4E9","#009E73","#330066","#CC79A7","#0072B2","#D55E00"))
+    cbPalette <- rev(c("#999999","#E69F00","#56B4E9","#D55E00","#330066","#CC79A7","#0072B2","#009E73"))
     if(n_group > 8) cbPalette <- c(cbPalette, ggplotColors(n_group-8)) else cbPalette <- cbPalette[1:n_group]
     double_extrapolation <- get_double_extrapolation(df)
     
@@ -3904,7 +4056,7 @@ ggiNEXTbeta3D = function(output, type = 'B'){
         
         tmp
         
-      }) %>% do.call(rbind,.) %>% rename("Estimate" = "Gamma") %>% mutate(div_type = "Gamma") %>% as_tibble()
+      }) %>% do.call(rbind,.) %>%  mutate(Estimate = if ("Gamma_meanPD" %in% colnames(.)) Gamma_meanPD else Gamma) %>% select(-any_of(c("Gamma", "Gamma_meanPD", "Gamma_PD"))) %>% mutate(div_type = "Gamma") %>% as_tibble()
       
       alpha = lapply(output, function(y) {
         
@@ -3926,12 +4078,13 @@ ggiNEXTbeta3D = function(output, type = 'B'){
         
         tmp
         
-      }) %>% do.call(rbind,.) %>% rename("Estimate" = "Alpha") %>% mutate(div_type = "Alpha") %>% as_tibble()
+      }) %>% do.call(rbind,.) %>% mutate(Estimate = if ("Alpha_meanPD" %in% colnames(.)) Alpha_meanPD else Alpha) %>% select(-any_of(c("Alpha", "Alpha_meanPD", "Alpha_PD"))) %>% mutate(div_type = "Alpha") %>% as_tibble()
       
-      beta =  lapply(output, function(y) {
+      beta = lapply(output, function(y) {
         
         tmp = y[["beta"]]
-        if ('mT' %in% colnames(tmp)) tmp = tmp %>% rename("Size" = "mT")
+      
+        tmp = add_alpha_size(y, tmp)
         
         tmp[tmp == 'Observed_SC(n, alpha)'] = tmp[tmp == 'Observed_SC(T, alpha)'] = 'Observed'
         tmp[tmp == 'Extrap_SC(2n, alpha)'] = tmp[tmp == 'Extrap_SC(2T, alpha)'] = 'Extrapolation'
@@ -3999,7 +4152,7 @@ ggiNEXTbeta3D = function(output, type = 'B'){
       C = lapply(output, function(y) {
         
         tmp = y[["1-C"]]
-        if ('mT' %in% colnames(tmp)) tmp = tmp %>% rename("Size" = "mT")
+        tmp = add_alpha_size(y, tmp)
         
         tmp[tmp == 'Observed_SC(n, alpha)'] = tmp[tmp == 'Observed_SC(T, alpha)'] = 'Observed'
         tmp[tmp == 'Extrap_SC(2n, alpha)'] = tmp[tmp == 'Extrap_SC(2T, alpha)'] = 'Extrapolation'
@@ -4021,7 +4174,7 @@ ggiNEXTbeta3D = function(output, type = 'B'){
       U = lapply(output, function(y) {
         
         tmp = y[["1-U"]]
-        if ('mT' %in% colnames(tmp)) tmp = tmp %>% rename("Size" = "mT")
+        tmp = add_alpha_size(y, tmp)
         
         tmp[tmp == 'Observed_SC(n, alpha)'] = tmp[tmp == 'Observed_SC(T, alpha)'] = 'Observed'
         tmp[tmp == 'Extrap_SC(2n, alpha)'] = tmp[tmp == 'Extrap_SC(2T, alpha)'] = 'Extrapolation'
@@ -4043,7 +4196,7 @@ ggiNEXTbeta3D = function(output, type = 'B'){
       V = lapply(output, function(y) {
         
         tmp = y[["1-V"]]
-        if ('mT' %in% colnames(tmp)) tmp = tmp %>% rename("Size" = "mT")
+        tmp = add_alpha_size(y, tmp)
         
         tmp[tmp == 'Observed_SC(n, alpha)'] = tmp[tmp == 'Observed_SC(T, alpha)'] = 'Observed'
         tmp[tmp == 'Extrap_SC(2n, alpha)'] = tmp[tmp == 'Extrap_SC(2T, alpha)'] = 'Extrapolation'
@@ -4065,7 +4218,7 @@ ggiNEXTbeta3D = function(output, type = 'B'){
       S = lapply(output, function(y) {
         
         tmp = y[["1-S"]]
-        if ('mT' %in% colnames(tmp)) tmp = tmp %>% rename("Size" = "mT")
+        tmp = add_alpha_size(y, tmp)
         
         tmp[tmp == 'Observed_SC(n, alpha)'] = tmp[tmp == 'Observed_SC(T, alpha)'] = 'Observed'
         tmp[tmp == 'Extrap_SC(2n, alpha)'] = tmp[tmp == 'Extrap_SC(2T, alpha)'] = 'Extrapolation'
@@ -4150,8 +4303,10 @@ ggiNEXTbeta3D = function(output, type = 'B'){
     
   } else if (length(output[[1]]) == 2) {
     
-    gamma = lapply(output, function(y) y[["gamma"]]) %>% do.call(rbind,.) %>% rename("Estimate" = "Gamma") %>% mutate(div_type = "Gamma") %>% as_tibble()
-    alpha = lapply(output, function(y) y[["alpha"]]) %>% do.call(rbind,.) %>% rename("Estimate" = "Alpha") %>% mutate(div_type = "Alpha") %>% as_tibble()
+    gamma = lapply(output, function(y) y[["gamma"]]) %>% do.call(rbind,.) %>% mutate(Estimate = if ("Gamma_meanPD" %in% colnames(.)) Gamma_meanPD else Gamma) %>%
+      select(-any_of(c("Gamma", "Gamma_meanPD", "Gamma_PD"))) %>% mutate(div_type = "Gamma") %>% as_tibble()
+    alpha = lapply(output, function(y) y[["alpha"]]) %>% do.call(rbind,.) %>% mutate(Estimate = if ("Alpha_meanPD" %in% colnames(.)) Alpha_meanPD else Alpha) %>%
+      select(-any_of(c("Alpha", "Alpha_meanPD", "Alpha_PD"))) %>% mutate(div_type = "Alpha") %>% as_tibble()
     
     if ('mT' %in% colnames(gamma)) {
       
@@ -4520,8 +4675,8 @@ ggplotColors <- function(g){
 #' @param diversity selection of diversity type: \code{'TD'} = Taxonomic diversity, \code{'PD'} = Phylogenetic diversity, and \code{'FD'} = Functional diversity.
 #' @param datatype data type of input data: individual-based abundance data (\code{datatype = "abundance"}) or species by sampling-units incidence/occurrence matrix (\code{datatype = "incidence_raw"}) with all entries being 0 (non-detection) or 1 (detection).
 #' @param PDtree (required argument for \code{diversity = "PD"}), a phylogenetic tree in Newick format spanned by all observed species across the input datasets.
-#' @param PDreftime (argument only for \code{diversity = "PD"} and \code{PDtype = "PD"} or \code{PDtype = "meanPD"}), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is \code{PDreftime = NULL}, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
-#' @param PDtype (argument only for \code{diversity = "PD"}), select PD type: \code{PDtype = "PD"} for effective total branch length, \code{PDtype = "meanPD"} for effective number of equally divergent lineages, or \code{PDtype = "AUC"} for an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. Default is \code{PDtype = "meanPD"}.
+#' @param PDreftime (argument only for \code{diversity = "PD"} and \code{PDtype = "meanPD"}), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is \code{PDreftime = NULL}, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
+#' @param PDtype (argument only for \code{diversity = "PD"}), select PD type: \code{PDtype = "meanPD"} for effective number of equally divergent lineages, or \code{PDtype = "AUC"} for an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. Default is \code{PDtype = "meanPD"}.
 #' @param FDdistM (required argument for \code{diversity = "FD"}), a species pairwise distance matrix for all species in the pooled assemblage. 
 #' @param FDtype (argument only for \code{diversity = "FD"}), select FD type: \code{FDtype = "tau_value"} for FD under a specified threshold value, or \code{FDtype = "AUC"} (area under the curve of tau-profile) for an overall FD which integrates all threshold values between zero and one. Default is \code{FDtype = "AUC"}.  
 #' @param FDtau (argument only for \code{diversity = "FD"} and \code{FDtype = "tau_value"}), a numerical value between 0 and
@@ -4535,9 +4690,7 @@ ggplotColors <- function(g){
 #' individual/pooled/joint assemblage (\code{Assemblage}), sample size (\code{n}), observed species richness (\code{S.obs}), sample coverage estimate of the reference sample (\code{SC(n)}), 
 #' sample coverage estimate for twice the reference sample size (\code{SC(2n)}). Other additional information is given below.\cr\cr
 #' (1) TD: the first five species abundance frequency counts in the reference sample (\code{f1}--\code{f5}).\cr\cr
-#' (2) PD (\code{PDtype = "PD"} or \code{PDtype = "meanPD"}): the observed total branch length in the phylogenetic tree (\code{PD.obs}), 
-#' the number of singletons (\code{f1*}) and doubletons (\code{f2*}) in  the node/branch abundance set, as well as the total branch length 
-#' of those singletons (\code{g1}) and of those doubletons (\code{g2}), and the reference time (\code{Reftime}).\cr\cr
+#' (2) PD (\code{PDtype = "meanPD"}): the observed phylogenetic diversity (\code{PD.obs}) and observed mean phylogenetic diversity (\code{meanPD.obs}), where \code{meanPD.obs = PD.obs / Reftime}; the number of singletons (\code{f1*}) and doubletons (\code{f2*}) in the node/branch abundance set, as well as the total branch length of those singletons (\code{g1}) and of those doubletons (\code{g2}), and the reference time (\code{Reftime}).\cr\cr
 #' (3) PD (\code{PDtype = "AUC"}): the minimum time reference point (\code{Tree.depth.min}) and the maximum time reference point
 #' (\code{Tree.depth.max}) used for calculating the integrated mean phylogenetic diversity. The minimum time reference point is zero,
 #' and the maximum time reference point is the age of the root of the phylogenetic tree spanned by the pooled observed species.\cr\cr
@@ -4575,14 +4728,6 @@ ggplotColors <- function(g){
 #' info_TD_inci_pair
 #' 
 #' \donttest{
-#'
-#' ## (Data Information) Phylogenetic diversity for abundance data
-#' data(Brazil_rainforests)
-#' data(Brazil_tree)
-#' info_PD_abun = DataInfobeta3D(data = Brazil_rainforests[1:2], diversity = 'PD',
-#'                               datatype = 'abundance', PDtype = 'PD', PDtree = Brazil_tree,
-#'                               PDreftime = NULL)
-#' info_PD_abun
 #'
 #'
 #' ## (Data Information) Mean phylogenetic diversity for abundance data 
@@ -4634,8 +4779,8 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
   if (length(PDreftime) > 1)
     stop("PDreftime can only accept a value instead of a vector.", call. = FALSE)
   
-  if(is.na(pmatch(PDtype, c("PD", "meanPD", "AUC"))))
-    stop("Incorrect phylogenetic diversity type. Please use 'PD', 'meanPD' or 'AUC'.",
+  if(is.na(pmatch(PDtype, c("meanPD", "AUC"))))
+    stop("Incorrect phylogenetic diversity type. Please use 'meanPD' or 'AUC'.",
          call. = FALSE)
   
   if (FDtype == "tau_values") stop('Please try FDtype = "tau_value".')  
@@ -4891,7 +5036,7 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
     
   }
   
-  if (diversity == "PD" & PDtype %in% c("PD", "meanPD")) {
+  if (diversity == "PD" & PDtype == "meanPD") {
     
     if(is.null(PDreftime)) PDreftime = H_max else if (PDreftime <= 0) { 
       stop("Reference time must be greater than 0. Use NULL to set it to pooled tree height.", call. = FALSE)
@@ -4907,6 +5052,8 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
         
         single = DataInfo3D(x, diversity = "PD", datatype = "abundance", PDtree = PDtree, PDreftime = PDreftime)
         
+        single = single %>%
+          mutate(meanPD.obs = PD.obs / PDreftime, .after = PD.obs)
         
         if (by_pair == FALSE) {
           
@@ -4941,11 +5088,12 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
             I2 <- which(ai == 2 & Li > 0)
             S.obs = y[y$branch.abun > 0,] %>% filter(tgroup == "Tip") %>% nrow
             PD_obs <- sum(Li)
+            meanPD_obs <- PD_obs / PDreftime
             f1 <- length(I1)
             f2 <- length(I2)
             g1 <- sum(Li[I1])
             g2 <- sum(Li[I2])
-            c(S.obs, PD_obs, f1, f2, g1, g2)
+            c(S.obs, PD_obs, meanPD_obs, f1, f2, g1, g2)
             
           }) %>% t()
           
@@ -4954,7 +5102,7 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
           
           multiple = tibble('Assemblage' = c("Pooled assemblage", "Joint assemblage"), 
                             'n' = sum(x), 'S.obs' = output[,1], 'SC(n)' = Chat, 'SC(2n)' = mul_C2n, 'PD.obs' = output[,2],
-                            'f1*' = output[,3], 'f2*' = output[,4], 'g1' = output[,5], 'g2' = output[,6],
+                            'meanPD.obs' = output[,3], 'f1*' = output[,4], 'f2*' = output[,5], 'g1' = output[,6], 'g2' = output[,7],
                             'Reftime' = PDreftime)
           
         } else {
@@ -4997,11 +5145,12 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
               I2 <- which(ai == 2 & Li > 0)
               S.obs = y[y$branch.abun > 0,] %>% filter(tgroup == "Tip") %>% nrow
               PD_obs <- sum(Li)
+              meanPD_obs <- PD_obs / PDreftime
               f1 <- length(I1)
               f2 <- length(I2)
               g1 <- sum(Li[I1])
               g2 <- sum(Li[I2])
-              c(S.obs, PD_obs, f1, f2, g1, g2)
+              c(S.obs, PD_obs, meanPD_obs, f1, f2, g1, g2)
               
             }) %>% t()
             
@@ -5010,7 +5159,7 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
             
             tibble('Assemblage' = c("Pooled assemblage", "Joint assemblage"), 
                    'n' = sum(x), 'S.obs' = output[,1], 'SC(n)' = Chat, 'SC(2n)' = mul_C2n, 'PD.obs' = output[,2],
-                   'f1*' = output[,3], 'f2*' = output[,4], 'g1' = output[,5], 'g2' = output[,6],
+                   'meanPD.obs' = output[,3], 'f1*' = output[,4], 'f2*' = output[,5], 'g1' = output[,6], 'g2' = output[,7],
                    'Reftime' = PDreftime) %>% 
               cbind(Pair = paste(ab_name[1], ab_name[2], sep = " vs. "),.)
             
@@ -5033,6 +5182,9 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
         if (is.null(names(x))) names(x) = paste('Assemblage_', 1:length(x), sep = "")
         
         single = DataInfo3D(x, diversity = "PD", datatype = "incidence_raw", PDtree = PDtree, PDreftime = PDreftime)
+        
+        single = single %>%
+          mutate(meanPD.obs = PD.obs / PDreftime, .after = PD.obs)
         
         if (by_pair == FALSE) {
           
@@ -5064,11 +5216,12 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
             I2 <- which(ai == 2 & Li > 0)
             S.obs = y[y$branch.abun > 0,] %>% filter(tgroup == "Tip") %>% nrow
             PD_obs <- sum(Li)
+            meanPD_obs <- PD_obs / PDreftime
             f1 <- length(I1)
             f2 <- length(I2)
             g1 <- sum(Li[I1])
             g2 <- sum(Li[I2])
-            c(S.obs, PD_obs, f1, f2, g1, g2)
+            c(S.obs, PD_obs, meanPD_obs, f1, f2, g1, g2)
             
           }) %>% t()
           
@@ -5077,7 +5230,7 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
           multiple = tibble('Assemblage' = c("Pooled assemblage", "Joint assemblage"), 
                             'T' = ncol(x[[1]]), 'U' = c(sum(data_gamma), sum(sapply(x, rowSums))), 
                             'S.obs' = output[,1], 'SC(T)' = Chat, 'SC(2T)' = mul_C2T, 'PD.obs' = output[,2],
-                            'Q1*' = output[,3], 'Q2*' = output[,4], 'R1' = output[,5], 'R2' = output[,6],
+                            'meanPD.obs' = output[,3], 'Q1*' = output[,4], 'Q2*' = output[,5], 'R1' = output[,6], 'R2' = output[,7],
                             'Reftime' = PDreftime)
           
         } else {
@@ -5117,11 +5270,12 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
               I2 <- which(ai == 2 & Li > 0)
               S.obs = y[y$branch.abun > 0,] %>% filter(tgroup == "Tip") %>% nrow
               PD_obs <- sum(Li)
+              meanPD_obs <- PD_obs / PDreftime
               f1 <- length(I1)
               f2 <- length(I2)
               g1 <- sum(Li[I1])
               g2 <- sum(Li[I2])
-              c(S.obs, PD_obs, f1, f2, g1, g2)
+              c(S.obs, PD_obs, meanPD_obs, f1, f2, g1, g2)
               
             }) %>% t()
             
@@ -5131,7 +5285,7 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
             tibble('Assemblage' = c("Pooled assemblage", "Joint assemblage"), 
                    'T' = ncol(x[[1]]), 'U' = c(sum(data_gamma), sum(sapply(x, rowSums))), 
                    'S.obs' = output[,1], 'SC(T)' = Chat, 'SC(2T)' = mul_C2T, 'PD.obs' = output[,2],
-                   'Q1*' = output[,3], 'Q2*' = output[,4], 'R1' = output[,5], 'R2' = output[,6],
+                   'meanPD.obs' = output[,3], 'Q1*' = output[,4], 'Q2*' = output[,5], 'R1' = output[,6], 'R2' = output[,7],
                    'Reftime' = PDreftime) %>% 
               cbind(Pair = paste(ab_name[1], ab_name[2], sep = " vs. "),.)
             
@@ -5358,6 +5512,7 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance',
         if (is.null(colnames(x))) colnames(x) = paste('Assemblage_', 1:ncol(x), sep = "")
         
         single = DataInfo3D(x, diversity = "FD", datatype = "abundance", FDtype = "tau_values", FDtau = FDtau, FDdistM = FDdistM)
+        
         
         if (by_pair == FALSE) {
           
@@ -5868,17 +6023,20 @@ print.iNEXTbeta3D <- function(x, ...){
       
       out = y[[i]]
       
+      num_cols <- sapply(out, is.numeric)
+      out[, num_cols] <- lapply(out[, num_cols, drop = FALSE], round, 4)
+
       ## Added by KaiHsiang 2024/11/11
       if ("Pair" %in% colnames(out)) {
         
-        out[,c(4,5,6,8,9,10)] = round(out[,c(4,5,6,8,9,10)], 4)
+        
         lapply(unique(out$Order.q), function(q) rbind(matrix(c("", "", paste("Order q = ", q, sep = ""), rep("", ncol(out)-3)), nrow = 1) %>% 
                                                         set_colnames(colnames(out)), 
                                                       out %>% filter(Order.q == q))) %>% do.call(rbind,.)
         
       } else {
         
-        out[,c(3,4,5,7,8,9)] = round(out[,c(3,4,5,7,8,9)], 4)
+        
         lapply(unique(out$Order.q), function(q) rbind(matrix(c("", paste("Order q = ", q, sep = ""), rep("", ncol(out)-2)), nrow = 1) %>% 
                                                         set_colnames(colnames(out)), 
                                                       out %>% filter(Order.q == q))) %>% do.call(rbind,.)

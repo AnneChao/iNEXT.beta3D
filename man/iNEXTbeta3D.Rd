@@ -55,9 +55,9 @@ iNEXTbeta3D(
 
 \item{PDtree}{(required argument for \code{diversity = "PD"}), a phylogenetic tree in Newick format spanned by all observed species across the input datasets.}
 
-\item{PDreftime}{(argument only for \code{diversity = "PD"} and \code{PDtype = "PD"} or \code{PDtype = "meanPD"}), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is \code{PDreftime = NULL}, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.}
+\item{PDreftime}{(argument only for \code{diversity = "PD"} and \code{PDtype = "meanPD"}), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is \code{PDreftime = NULL}, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.}
 
-\item{PDtype}{(argument only for \code{diversity = "PD"}), select PD type: \code{PDtype = "PD"} for effective total branch length, \code{PDtype = "meanPD"} for effective number of equally divergent lineages, or \code{PDtype = "AUC"} for an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. Default is \code{PDtype = "AUC"}.}
+\item{PDtype}{(argument only for \code{diversity = "PD"}), select PD type: \code{PDtype = "meanPD"} for effective number of equally divergent lineages, or \code{PDtype = "AUC"} for an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. Default is \code{PDtype = "AUC"}.}
 
 \item{PDcut_number}{(argument only for \code{diversity = "PD"} and \code{PDtype = "AUC"}), a positive integer larger than one specifying the number of equally spaced time reference points between zero and the age of the root used to numerically approximate the AUC. Default is \code{PDcut_number = 30}. A larger value can be used to obtain a more accurate AUC approximation.}
 
@@ -73,7 +73,7 @@ iNEXTbeta3D(
 }
 \value{
 For \code{base = "coverage"}, return a list of seven data frames with three diversity (gamma, alpha, and beta
- diversity) and four dissimilarity measures. For \code{base = "size"}, return a list of two matrices with two diversity
+ diversity) and four dissimilarity measures. For \code{base = "size"}, return a list of two data frames with two diversity
  (gamma and alpha diversity).\cr 
  
  For \code{base = "coverage"}, the output in each data frame includes: 
@@ -81,13 +81,13 @@ For \code{base = "coverage"}, return a list of seven data frames with three dive
  \item{Pair}{combinations of assemblage pairs; this column is included only when the analysis is performed for every pair of assemblages.}
  \item{Order.q}{the diversity order of q.} 
  \item{SC}{the target standardized coverage value.}
- \item{Size/mT}{the corresponding sample size.}
- \item{Alpha/Beta/Gamma/Dissimilarity}{the estimated diversity/dissimilarity estimate.}
+ \item{Size/mT}{the corresponding sample size for gamma and alpha diversity. This column is not included for beta diversity or dissimilarity indices.}
+\item{Alpha/Beta/Gamma/Dissimilarity}{ the estimated diversity/dissimilarity estimate. For \code{PDtype = "meanPD"}, the gamma output includes \code{Gamma_PD} and \code{Gamma_meanPD}, whereas the alpha output includes \code{Alpha_PD} and \code{Alpha_meanPD}, where \code{Gamma_PD = Gamma_meanPD * Reftime} and \code{Alpha_PD = Alpha_meanPD * Reftime}. Raw PD is retained as an auxiliary output for gamma and alpha diversity when \code{PDtype = "meanPD"}.}
  \item{Method}{Rarefaction, Observed, or Extrapolation, depending on whether the target coverage is less than, equal to, or greater than the coverage of the reference sample.} 
  \item{s.e.}{standard error of standardized estimate.}
  \item{LCL, UCL}{the bootstrap lower and upper confidence limits for the diversity/dissimilarity with a default significance level of 0.95.}
- \item{Diversity}{\code{'TD'} = 'Taxonomic diversity', \code{'PD'} = 'Phylogenetic diversity', \code{'meanPD'} = 'Mean phylogenetic diversity', \code{'PD_AUC'} = 'Phylogenetic diversity (AUC)', \code{'FD_tau'} = 'Functional diversity (given tau)', \code{'FD_AUC'} = 'Functional diversity (AUC)'}
- \item{Reftime}{the reference time for PD under \code{PDtype = "PD"} or \code{PDtype = "meanPD"}.}
+ \item{Diversity}{\code{'TD'} = 'Taxonomic diversity', \code{'meanPD'} = 'Mean phylogenetic diversity', \code{'PD_AUC'} = 'Phylogenetic diversity (AUC)', \code{'FD_tau'} = 'Functional diversity (given tau)', \code{'FD_AUC'} = 'Functional diversity (AUC)'}
+ \item{Reftime}{the reference time for PD under \code{PDtype = "meanPD"}.}
  \item{Tau}{the threshold of functional distinctiveness between any two species for FD (under \code{FDtype = "tau_value"}).}
  Similar output is obtained for \code{base = "size"}.\cr
 }

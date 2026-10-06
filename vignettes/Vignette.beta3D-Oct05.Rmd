@@ -1,7 +1,7 @@
 ---
 title: "An Introduction to iNEXT.beta3D via Examples"
 author: "Anne Chao, Yu-Ti Lee, Keng-Lei Lin, and Po-Yen Chuang"
-date: "Latest version 1.1.0 (Sep. 2026)"
+date: "Version 1.1.0 (October 2026)"
 output:
   rmarkdown::html_vignette:
     vignette: >
@@ -23,7 +23,11 @@ library(iNEXT.beta3D)
 ```
 
 
-<!-- <font color=#FF6781>The Latest Update in Nov. 2024: In earlier versions, diversity decomposition (alpha, beta, gamma, and dissimilarity) was performed only for all assemblages of datasets. In the updated version, we have added a logical argument "by_pair" in the main function "iNEXTbeta3D" to specify whether diversity decomposition will be performed for pairs of assemblages or not. If "by_pair = TRUE", alpha/beta/gamma diversity or dissimilarity will be computed for every pair of assemblages in the input data; if "by_pair = FALSE", alpha/beta/gamma diversity or dissimilarity will be computed for K assemblages (i.e., K can be greater than two) when data for K assemblages are provided in the input data. Default is "by_pair = FALSE". In addition, we have added an AUC-based phylogenetic diversity measure ("PDtype = AUC"), which integrates mean phylogenetic diversity over phylogenetic tree depth. The default setting for phylogenetic diversity is now "PDtype = AUC".</font> -->
+<!-- <font color=#FF6781>
+Latest update in Nov. 2024: In earlier versions, diversity decomposition (alpha, beta, gamma, and dissimilarity) was performed only for all assemblages within each dataset. In the updated version, we added a logical argument "by_pair" to the main function "iNEXTbeta3D" to specify whether diversity decomposition is performed for every pair of assemblages. If "by_pair = TRUE", alpha, beta, gamma diversity and dissimilarity are computed for every pair of assemblages in the input data; if "by_pair = FALSE", they are computed jointly for all K assemblages (where K may be greater than two). The default is "by_pair = FALSE".
+
+In addition, we added an AUC-based phylogenetic diversity measure ("PDtype = AUC"), which integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. The default setting for phylogenetic diversity is now "PDtype = AUC".
+</font>-->
 
 
 The package `iNEXT.beta3D` (iNterpolation and EXTrapolation with beta diversity for three dimensions of biodiversity) is a sequel to `iNEXT.` The three dimensions (3D) of biodiversity include <font color=#FF6781>taxonomic diversity (TD)</font>, <font color=#FF6781>phylogenetic diversity (PD)</font> and <font color=#FF6781>functional diversity (FD)</font>. This document provides an introduction demonstrating how to run `iNEXT.beta3D`. An online version [iNEXT.beta3D Online](https://chao.shinyapps.io/iNEXT_beta3D/) is also available for users without an R background.
@@ -263,13 +267,13 @@ If users set <code>base = "size"</code>, this function computes size-based stand
 </tr>
 <tr class="even">
 <td align="center"><code>PDreftime</code></td>
-<td align="left"> (argument only for <code>diversity = "PD"</code> and <code>PDtype = "PD"</code> or <code>PDtype = "meanPD"</code>), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is <code>PDreftime = NULL</code>, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
+<td align="left"> (argument only for <code>diversity = "PD"</code> and <code>PDtype = "meanPD"</code>), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is <code>PDreftime = NULL</code>, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
 </td>
 
 <tr class="odd">
 <td align="center"><code>PDtype</code></td>
 <td align="left">
-(argument only for <code>diversity = "PD"</code>), select PD type: <code>PDtype = "PD"</code> for effective total branch length, <code>PDtype = "meanPD"</code> for effective number of equally divergent lineages, or <code>PDtype = "AUC"</code> for an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. Default is <code>PDtype = "AUC"</code>.
+(argument only for <code>diversity = "PD"</code>), select PD type: <code>PDtype = "meanPD"</code> for effective number of equally divergent lineages, or <code>PDtype = "AUC"</code> for an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. Default is <code>PDtype = "AUC"</code>.
 </td>
 </tr>
 
@@ -327,6 +331,8 @@ By default (with `base = 'coverage'`), the `iNEXTbeta3D()` function for each of 
 - 1-U (standardized Jaccard-type non-overlap index)
 - 1-V (standardized Sorensen-type turnover index)
 - 1-S (standardized Jaccard-type turnover index)
+
+For `PDtype = "meanPD"`, the gamma output includes `Gamma_PD` and `Gamma_meanPD`, whereas the alpha output includes `Alpha_PD` and `Alpha_meanPD`, where `Gamma_PD = Gamma_meanPD × Reftime` and `Alpha_PD = Alpha_meanPD × Reftime`. For beta diversity and dissimilarity indices, only a single estimate is reported because the meanPD- and PD-based values are identical after diversity decomposition.
 
 When users set `base = 'size'`, the `iNEXTbeta3D()` function for each of the three dimensions (TD, PD, and FD) returns the `"iNEXTbeta3D"` object including two data frames for each dataset: 
 
@@ -398,9 +404,9 @@ output_TDc_abun
 
 ```
 
-The output contains seven data frames: `gamma`, `alpha`, `beta`, `1-C`, `1-U`, `1-V`, `1-S`. Each data frame includes the dataset name (`Dataset`), combinations of assemblage pairs (`Pair`, if the calculation is not performed by pairs, this column is absent), the diversity order of q (`Order.q`), the target standardized coverage value (`SC`), the corresponding sample size (`Size`), the estimated diversity/dissimilarity value (`Alpha/Beta/Gamma/Dissimilarity`), `Method` (Rarefaction, Observed, or Extrapolation, depending on whether the target coverage is less than, equal to, or greater than the coverage of the reference sample), standard error of standardized estimate (`s.e.`), the bootstrap lower and upper confidence limits for the diversity/dissimilarity with a default significance level of 0.95 (`LCL`, `UCL`). These estimates and confidence intervals are then used to plot the rarefaction and extrapolation curves.
+The output contains seven data frames: `gamma`, `alpha`, `beta`, `1-C`, `1-U`, `1-V`, `1-S`. Each data frame includes the dataset name (`Dataset`), combinations of assemblage pairs (`Pair`, when `by_pair = TRUE`), the diversity order (`Order.q`), and the target standardized coverage value (`SC`). The corresponding sample size (`Size` for abundance data or `mT` for incidence data) is reported only for gamma and alpha diversity and is not included for beta diversity or dissimilarity indices. The estimated diversity/dissimilarity value is generally reported in the corresponding `Alpha`, `Beta`, `Gamma`, or `Dissimilarity` column. `Method` indicates Rarefaction, Observed, or Extrapolation, depending on whether the target coverage is less than, equal to, or greater than the coverage of the reference sample. The output also includes the standard error (`s.e.`) and the bootstrap lower and upper confidence limits (`LCL`, `UCL`) for the diversity/dissimilarity estimates. These estimates and confidence intervals are then used to plot the rarefaction and extrapolation curves. For `PDtype = "meanPD"`, gamma and alpha diversity are reported as `Gamma_PD` and `Gamma_meanPD`, and `Alpha_PD` and `Alpha_meanPD`, respectively, where `Gamma_PD = Gamma_meanPD × Reftime` and `Alpha_PD = Alpha_meanPD × Reftime`.
 
-Our diversity/dissimilarity estimates and related statistics in the default output are displayed for the standardized coverage value from 0.5 to the coverage value of twice the reference sample size (for q = 0), or from 0.5 to 1.0 (for q = 1 and 2), in increments of 0.025. In addition, the results for the following four coverage value are also added: `SC(n, alpha)`, `SC(2n, alpha)`, `SC(n, gamma)` and `SC(2n, gamma)` if these values are in the above-specified range. Here `SC(n, alpha)` and `SC(2n, alpha)` represent, respectively, the coverage estimate for the alpha reference sample size n and the extrapolated sample with size 2n in the joint assemblage. These values can be found as `SC(n)` and `SC(2n)` for `"Joint assemblage (for alpha)"` in the column "Assemblage" from the output of the function `DataInfobeta3D`; see later text. Similar definitions pertain to `SC(n, gamma)` and `SC(2n, gamma)` for the gamma reference sample; these two values can also be found as `SC(n)` and `SC(2n)` for `"Pooled assemblage (for gamma)"` in the column "Assemblage" from the output of the function `DataInfobeta3D`. For beta diversity and dissimilarity, the observed sample coverage and extrapolation limit are defined the same as the alpha diversity. The corresponding coverage values for incidence data are denoted as, respectively, `SC(T, alpha)`, `SC(2T, alpha)`, `SC(T, gamma)` and `SC(2T, gamma)` in the output.
+Our diversity/dissimilarity estimates and related statistics in the default output are displayed for the standardized coverage value from 0.5 to the coverage value of twice the reference sample size (for q = 0), or from 0.5 to 1.0 (for q = 1 and 2), in increments of 0.025. In addition, the results for the following four coverage values are also added: `SC(n, alpha)`, `SC(2n, alpha)`, `SC(n, gamma)` and `SC(2n, gamma)` if these values are in the above-specified range. Here `SC(n, alpha)` and `SC(2n, alpha)` represent, respectively, the coverage estimate for the alpha reference sample size n and the extrapolated sample with size 2n in the joint assemblage. These values can be found as `SC(n)` and `SC(2n)` for `"Joint assemblage (for alpha)"` in the column "Assemblage" from the output of the function `DataInfobeta3D`; see later text. Similar definitions pertain to `SC(n, gamma)` and `SC(2n, gamma)` for the gamma reference sample; these two values can also be found as `SC(n)` and `SC(2n)` for `"Pooled assemblage (for gamma)"` in the column "Assemblage" from the output of the function `DataInfobeta3D`. For beta diversity and dissimilarity, the observed sample coverage and extrapolation limit are defined the same as the alpha diversity. The corresponding coverage values for incidence data are denoted as, respectively, `SC(T, alpha)`, `SC(2T, alpha)`, `SC(T, gamma)` and `SC(2T, gamma)` in the output.
 
 Because all the diversity/dissimilarity estimates are computed for the standardized coverage range values starting from 0.5, the default setting with `level = NULL` does not work if the observed sample coverage in the alpha/gamma reference sample is less than 50%. In this case, readers should specify sample coverage values using the argument `level`, instead of using `level = NULL`. The suggested maximum coverage value that readers can specify is `SC(2n, alpha)`. Beyond the limit, beta diversity and dissimilarity estimates may be subject to some bias. Below we show the output for taxonomic beta diversity between the "Edge" and "Interior" habitats in the "Marim" fragment. 
 
@@ -411,8 +417,11 @@ output_TDc_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'TD',
                               datatype = 'abundance', base = "coverage", nboot = 10)
 
 tmp = output_TDc_abun$Marim$beta
-tmp[,c(3:5, 7:9)] = round(tmp[,c(3:5, 7:9)], 3)
-tmp = tmp[,-ncol(tmp)]
+
+num_cols <- c("SC", "Beta", "s.e.", "LCL", "UCL")
+tmp[, num_cols] <- round(tmp[, num_cols], 3)
+
+tmp = tmp[, -ncol(tmp)]
 tmp
 
 ```
@@ -591,13 +600,12 @@ plot_TDs_inci_pair[["CR_2005_2011_2017"]]
 As with taxonomic diversity, `iNEXT.beta3D` computes coverage-based standardized phylogenetic gamma, alpha, beta diversity as well as four classes of phylogenetic dissimilarity indices; it also computes size-based standardized phylogenetic gamma and alpha diversity. The species names (or identification codes) in the phylogenetic tree must exactly match with those in the corresponding species abundance/incidence data. Two types of phylogenetic rarefaction and extrapolation curves (coverage- and size-based sampling curves) are also provided. 
 
 
-The required argument for performing PD analysis is `PDtree`. For example, the phylogenetic tree for all observed species (including species in both "Marim" and "Rebio2" fragments) is stored in a data file named `"Brazil_tree"`. Then we enter the argument `PDtree = Brazil_tree`. Three optional arguments are `PDtype`, `PDreftime`, and `PDcut_number`. There are three options for `PDtype`: `"PD"` (effective total branch length), `"meanPD"` (effective number of equally divergent lineages, meanPD = PD/tree depth), or `"AUC"` (an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root). Default is `PDtype = "AUC"`. 
+The required argument for performing PD analysis is `PDtree`. For example, the phylogenetic tree for all observed species (including species in both "Marim" and "Rebio2" fragments) is stored in a data file named `"Brazil_tree"`. Then we enter the argument `PDtree = Brazil_tree`. Three optional arguments are `PDtype`, `PDreftime`, and `PDcut_number`. Two options are available for `PDtype`: `"meanPD"` (effective number of equally
+divergent lineages, meanPD = PD/tree depth) and `"AUC"` (an overall measure that integrates mean phylogenetic diversity over all time reference points from zero to the age of the root). Default is `PDtype = "AUC"`. 
 
-For `PDtype = "PD"` and `PDtype = "meanPD"`, `PDreftime` specifies a fixed time reference point for phylogenetic diversity. If `PDreftime = NULL`, the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
+For `PDtype = "meanPD"`, `PDreftime` specifies a fixed time reference point for phylogenetic diversity. If `PDreftime = NULL`, the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
 
-For `PDtype = "AUC"`, mean phylogenetic diversity is integrated over all time reference points from zero to the age of the root. `PDcut_number` specifies the number of equally spaced time reference points used to numerically approximate the AUC.
-
-Default is `PDcut_number = 30`. A larger value can be used to obtain a more accurate AUC approximation. Run the following code to perform PD analysis. The output data frame is similar to that based on abundance data and thus is omitted.
+For `PDtype = "AUC"`, mean phylogenetic diversity is integrated over all time reference points from zero to the age of the root. `PDcut_number` specifies the number of equally spaced time reference points used to numerically approximate the AUC. Default is `PDcut_number = 30`. A larger value can be used to obtain a more accurate AUC approximation. Run the following code to perform PD analysis. The output data frame is similar to that based on abundance data and thus is omitted.
 
 
 ```{r eval=FALSE}
@@ -784,11 +792,13 @@ tmp
 
 ```
 
-For both `PDtype = "PD"` and `PDtype = "meanPD"`, the output information is described as follows:
+For `PDtype = "meanPD"`, the output information is described as follows:
 
 - `Dataset`, `Pair`, `Assemblage`, `n`, `S.obs`, `SC(n)` and `SC(2n)`: definitions are the same as in the TD output.
 
 - `PD.obs` = the observed total branch length in the phylogenetic tree spanned by all observed species.
+
+- `meanPD.obs` = the observed mean phylogenetic diversity, calculated as `PD.obs / Reftime`.
 
 - `f1*`,`f2*` = the number of singletons and doubletons in the node/branch abundance set.
 
