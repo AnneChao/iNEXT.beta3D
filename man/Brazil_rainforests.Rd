@@ -9,9 +9,10 @@
 \description{
   This dataset includes tree species abundance counts in two rainforests (Marim and Rebio2)
   in Brazil, collected by Magnago et al. (2014, 2015, 2017). Within each forest,
-  there are two assemblages/habitats (Edge and Interior). The data are slightly different
-  from those used in Chao et al. (2023) because some species are excluded due to lack of
-  phylogenetic information. \cr
+  there are two assemblages/habitats (Edge and Interior). The data differ slightly
+  from those analyzed in Chao et al. (2023b), as seven species were removed from
+  the original pooled data because phylogenetic information was unavailable for
+  these species.
 }
 
 \usage{data(Brazil_rainforests)}
@@ -29,21 +30,27 @@
 
 \references{
 
-  Chao, A., Henderson, P. A., Chiu, C.-H., Moyes, F., Hu, K.-H., Dornelas, M. and Magurran, A. E. (2021).
+  Chao, A., Henderson, P. A., Chiu, C.-H., Moyes, F., Hu, K.-H., Dornelas, M., and Magurran, A. E. (2021).
   Measuring temporal change in alpha diversity: a framework integrating taxonomic, phylogenetic and functional diversity
   and the iNEXT.3D standardization. Methods in Ecology and Evolution, 12, 1926-1940.\cr\cr
 
-  Magnago, L. F. S., Edwards, D. P., Edwards, F. A., Magrach, A., Martins, S. V., & Laurance, W. F. (2014).
+  Chao, A., Thorn, S., Chiu, C.-H., Moyes, F., Hu, K.-H., Chazdon, R. L., Wu, J., Magnago, L. F. S.,
+  Dornelas, M., Zelený, D., Colwell, R. K., and Magurran, A. E. (2023b).
+  Rarefaction and extrapolation with beta diversity under a framework of Hill numbers:
+  the iNEXT.beta3D standardization. Ecological Monographs, e1588.
+  https://doi.org/10.1002/ecm.1588 \cr\cr
+
+  Magnago, L. F. S., Edwards, D. P., Edwards, F. A., Magrach, A., Martins, S. V., and Laurance, W. F. (2014).
   Functional attributes change but functional richness is unchanged after fragmentation of Brazilian Atlantic forests.
   Journal of Ecology, 102, 475-485. \cr\cr
 
-  Magnago, L. F. S., Magrach, A., Barlow, J., Schaefer, C. E. G. R., Laurance, W. F., Martins, S. V., & Edwards, D. P. (2017).
+  Magnago, L. F. S., Magrach, A., Barlow, J., Schaefer, C. E. G. R., Laurance, W. F., Martins, S. V., and Edwards, D. P. (2017).
   Do fragment size and edge effects predict carbon stocks in trees and lianas in tropical forests?
   Functional Ecology, 31, 542-552. \cr\cr
 
-  Magnago, L. F. S., Rocha, M. F., Meyer, L., Martins, S. V., & Meira-Neto, J. A. A. (2015).
+  Magnago, L. F. S., Rocha, M. F., Meyer, L., Martins, S. V., and Meira-Neto, J. A. A. (2015).
   Microclimatic conditions at forest edges have significant impacts on vegetation structure in large Atlantic forest fragments.
-  Biodiversity and Conservation, 24, 2305-2318. \cr\cr
+  Biodiversity and Conservation, 24, 2305-2318.
 }
 
 \keyword{datasets}

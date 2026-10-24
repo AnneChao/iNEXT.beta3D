@@ -12,7 +12,7 @@
 \item{...}{additional arguments.}
 }
 \value{
-a list of multiple objects (see \code{iNEXTbeta3D} for more details) with simplified outputs.
+Prints the diversity and dissimilarity estimation tables contained in the input \code{iNEXTbeta3D} object to the console and invisibly returns \code{NULL}.
 }
 \description{
 \code{print.iNEXTbeta3D}: Print method for objects inheriting from class \code{"iNEXTbeta3D"}

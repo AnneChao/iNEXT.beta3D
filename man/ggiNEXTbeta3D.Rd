@@ -2,28 +2,23 @@
 % Please edit documentation in R/MainFun.r
 \name{ggiNEXTbeta3D}
 \alias{ggiNEXTbeta3D}
-\title{ggplot2 extension for the iNEXTbeta3D object}
+\title{ggplot2 Extension for iNEXTbeta3D Objects}
 \usage{
 ggiNEXTbeta3D(output, type = "B")
 }
 \arguments{
-\item{output}{output from the function \code{iNEXTbeta3D}.}
+\item{output}{An object returned by \code{iNEXTbeta3D()}.}
 
-\item{type}{(argument only for \code{base = "coverage"}),\cr
-\code{type = 'B'} for plotting the rarefaction and extrapolation sampling curves for gamma, alpha, and beta diversity;  \cr
-\code{type = 'D'} for plotting the rarefaction and extrapolation sampling curves for four dissimilarity indices.\cr
-Skip the argument for plotting size-based rarefaction and extrapolation sampling curves for gamma and alpha diversity.}
+\item{type}{Argument used only when \code{base = "coverage"}. \code{type = "B"} generates R/E sampling curves for gamma, alpha, and beta diversity, whereas \code{type = "D"} generates R/E sampling
+curves for four dissimilarity indices. The \code{type} argument is not required when plotting size-based R/E sampling curves for gamma and alpha diversity.}
 }
 \value{
-For output generated with \code{by_pair = FALSE}, a single \code{ggplot} object is returned. For output generated with \code{by_pair = TRUE}, a named list of \code{ggplot} objects is returned,
-with one plot for each dataset and different assemblage pairs distinguished by color.
-For \code{base = "coverage"}, the plots show gamma, alpha, and beta diversity (\code{type = "B"}) or four dissimilarity indices (\code{type = "D"});
-for \code{base = "size"}, the plots show gamma and alpha diversity.
+When the input was generated with \code{by_pair = FALSE}, the function returns a single \code{ggplot} object that can be customized using \code{ggplot2}. 
+When the input was generated with \code{by_pair = TRUE}, the function returns a named list of \code{ggplot} objects, with one plot for each dataset and different pairs of assemblages distinguished by color.
+For \code{base = "coverage"}, the plots display gamma, alpha, and beta diversity (\code{type = "B"}) or four dissimilarity indices (\code{type = "D"}). For \code{base = "size"}, the plots display gamma and alpha diversity.
 }
 \description{
-\code{ggiNEXTbeta3D} is a \code{ggplot2} extension for the \code{iNEXTbeta3D} object to plot sample-size- and coverage-based rarefaction/extrapolation curves.
-For output generated with \code{by_pair = FALSE}, a single \code{ggplot} object is returned. For output generated with \code{by_pair = TRUE}, a list of \code{ggplot} objects is returned,
-with one plot for each dataset and different assemblage pairs distinguished by color.
+\code{ggiNEXTbeta3D()} is a plotting function based on \code{ggplot2} that generates sample-size-based and coverage-based rarefaction and extrapolation (R/E) sampling curves from \code{iNEXTbeta3D()} output. It supports results generated with both \code{by_pair = FALSE} and \code{by_pair = TRUE}.
 }
 \examples{
 \donttest{
