@@ -44,7 +44,7 @@
   \code{iNEXT.beta3D} features two types of R/E sampling curves:
 
   \itemize{
-    \item Sample-size-based (or size-based) R/E curves: These curves plot standardized 3D
+    \item Sample-size-based (or size-based) R/E sampling curves: These curves plot standardized 3D
     gamma and alpha diversity as functions of sample size. Note that size-based beta
     diversity is not generally a statistically valid measure (Chao et al. 2023b);
     therefore, the corresponding beta diversity sampling curve is not provided.

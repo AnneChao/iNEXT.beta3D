@@ -3996,8 +3996,16 @@ ggiNEXTbeta3D = function(output, type = 'B'){
 
     if("Pair" %in% colnames(df)) df$PlotGroup <- df$Pair else df$PlotGroup <- df$Dataset
     n_group <- length(unique(df$PlotGroup))
-    cbPalette <- cbPalette <- c("#D55E00", "#0072B2", "#330066", "#C4A484", "#999999", "#E69F00", "#56B4E9", "#CC79A7", "#009E73")
-    if(n_group > 8) cbPalette <- c(cbPalette, ggplotColors(n_group-8)) else cbPalette <- cbPalette[1:n_group]
+    cbPalette <- c("#D55E00", "#0072B2", "#330066", "#C4A484", "#999999", "#E69F00", "#56B4E9", "#CC79A7", "#009E73")
+    if (n_group > length(cbPalette)) {
+      cbPalette <- c(
+        cbPalette,
+        ggplotColors(n_group - length(cbPalette))
+      )
+    } else {
+      cbPalette <- cbPalette[seq_len(n_group)]
+    }
+    
     double_extrapolation <- get_double_extrapolation(df)
     
     if(xvar=="SC"){

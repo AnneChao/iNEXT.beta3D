@@ -1,0 +1,1064 @@
+---
+title: "An Introduction to iNEXT.beta3D via Examples"
+author: "Anne Chao, Yu-Ti Lee, Keng-Lei Lin, and Po-Yen Chuang"
+date: "Version 1.1.0 (October 2026)"
+output:
+  rmarkdown::html_vignette:
+    vignette: >
+      %\VignetteIndexEntry{An Introduction to iNEXT.beta3D via Examples}
+      %\VignetteEngine{knitr::rmarkdown}
+      %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", 
+                      fig.retina = 2,
+                      fig.align = 'center',
+                      fig.width = 7, fig.height = 5,
+                      warning = FALSE, message = FALSE)
+options("width" = 200, digits = 3)
+library(iNEXT.beta3D)
+
+```
+
+
+<!-- <font color=#FF6781>
+Latest update in Nov. 2024: In earlier versions, diversity decomposition (alpha, beta, gamma, and dissimilarity) was performed only for all assemblages within each dataset. In the updated version, we added a logical argument "by_pair" to the main function "iNEXTbeta3D" to specify whether diversity decomposition is performed for every pair of assemblages. If "by_pair = TRUE", alpha, beta, gamma diversity and dissimilarity are computed for every pair of assemblages in the input data; if "by_pair = FALSE", they are computed jointly for all K assemblages (where K may be greater than two). The default is "by_pair = FALSE".
+
+In addition, we added an AUC-based phylogenetic diversity measure ("PDtype = AUC"), which integrates mean phylogenetic diversity over all time reference points from zero to the age of the root. The default setting for phylogenetic diversity is now "PDtype = AUC".
+</font>-->
+
+
+The package `iNEXT.beta3D` (iNterpolation and EXTrapolation with beta diversity for three dimensions of biodiversity) is a sequel to `iNEXT`. The three dimensions (3D) of biodiversity include <font color=#FF6781>taxonomic diversity (TD)</font>, <font color=#FF6781>phylogenetic diversity (PD)</font> and <font color=#FF6781>functional diversity (FD)</font>. This document provides an introduction demonstrating how to run `iNEXT.beta3D`. An online version [iNEXT.beta3D Online](https://chao.shinyapps.io/iNEXT_beta3D/) is also available for users without an R background.
+
+A unified framework based on Hill numbers (for TD) and their generalizations, Hill-Chao numbers (for PD and FD), is adopted in the package. TD quantifies the effective number of species, meanPD (PD divided by reference time) quantifies the effective number of lineages, and FD quantifies the effective number of virtual functional groups (or functional "species"). Thus, TD, meanPD, and FD
+are all expressed in comparable units of species/lineage equivalents, allowing meaningful comparisons across the three dimensions of biodiversity; see Chao et al. (2021) for a review of the unified framework.
+
+For each of the three dimensions, iNEXT.beta3D focuses on the multiplicative decomposition of diversity (beta = gamma/alpha, expressed in units of effective number of assemblages) for orders q = 0, 1 and 2, based on sampling data. The resulting 3D beta diversity quantifies the extent of among-assemblage differentiation, reflecting changes in species, lineages, or functional-groups composition and their abundances across assemblages.
+
+iNEXT.beta3D provides standardized 3D estimates at a common sample size (for alpha and gamma diversity only, because sample-size-based beta diversity is not generally valid) or at a common sample coverage (for alpha, beta and gamma diversity). iNEXT.beta3D also provides standardized estimates for four classes of coverage-based dissimilarity measures.
+
+Based on rarefaction and extrapolation (R/E) theory for Hill-numbers-based TD of orders q = 0, 1 and 2, Chao et al. (2023b) developed the corresponding R/E theory for taxonomic beta diversity, with applications to real-world spatial, temporal and spatio-temporal data. An application to Gentry’s global forest data together with a concise description of the theory, is provided in Chao et al. (2023a). The extension to phylogenetic and functional beta diversity follows a generally parallel framework. `iNEXT.beta3D` features two types of R/E sampling curves:
+
+1. Sample-size-based (or size-based) R/E sampling curves: These curves plot standardized 3D <font color=#FF6781>gamma</font> and <font color=#FF6781>alpha</font> diversity as functions of sample size. Note that the size-based beta diversity is not generally a statistically valid measure (Chao et al. 2023b); therefore, the corresponding beta diversity sampling curve is not provided.
+
+2. Sample-coverage-based (or coverage-based) R/E sampling curves: These curves plot standardized 3D <font color=#FF6781>gamma</font>, <font color=#FF6781>alpha</font>, and <font color=#FF6781>beta</font> diversity, as well as four classes of dissimilarity measures, as functions of sample coverage, an objective measure of sample completeness.
+
+Note that sufficient data are required to run `iNEXT.beta3D`. If a dataset contains only a few species, along with their abundances, phylogenies, or traits, it may not contain sufficient information for reliable `iNEXT.beta3D` analyses.
+
+## HOW TO CITE iNEXT.beta3D
+If you publish work based on results obtained from `iNEXT.beta3D`, please cite at least one of the following methodological papers (2023a, b) and also the `iNEXT.beta3D` package:
+
+- Chao, A., Chiu, C.-H., Hu, K.-H., and Zelený, D. (2023a). Revisiting Alwyn H. Gentry's forest transect data: a statistical sampling-model-based approach. <i>Japanese Journal of Statistics and Data Science</i>, 6, 861-884. (https://doi.org/10.1007/s42081-023-00214-1) 
+
+- Chao, A., Thorn, S., Chiu, C.-H., Moyes, F., Hu, K.-H., Chazdon, R. L., Wu, J., Magnago, L. F. S., Dornelas, M., Zelený, D., Colwell, R. K., and Magurran, A. E. (2023b). Rarefaction and extrapolation with beta diversity under a framework of Hill numbers: the iNEXT.beta3D standardization. <i>Ecological Monographs</i> e1588.(https://doi.org/10.1002/ecm.1588) 
+
+- Chao, A., Lee, Y.-T., Lin, K.-L., and Chuang, P.-Y. (2026). The iNEXT.beta3D package: interpolation and extrapolation with beta diversity for three dimensions of biodiversity. R package version 1.1.0.  
+
+## SOFTWARE NEEDED TO RUN iNEXT.beta3D IN R
+- Required: [R](https://cran.r-project.org/)
+- Suggested: [RStudio IDE](https://posit.co/products/open-source/rstudio/#Desktop)
+
+## HOW TO RUN iNEXT.beta3D:
+The `iNEXT.beta3D` package is available from CRAN and can be downloaded from Anne Chao's GitHub [iNEXT.beta3D_github](https://github.com/AnneChao/iNEXT.beta3D) using the following commands. For a first-time installation, additional visualization extension package (`ggplot2` from CRAN) and relevant package (`iNEXT.3D` from CRAN) must be installed and loaded. 
+
+
+```{r eval=FALSE}
+
+## install iNEXT.beta3D package from CRAN
+install.packages("iNEXT.beta3D")
+
+## install the latest version from GitHub
+install.packages('devtools')
+library(devtools)
+install_github('AnneChao/iNEXT.beta3D')
+
+## import packages
+library(iNEXT.beta3D)
+
+```
+
+
+There are three main functions in this package: 
+
+- **iNEXTbeta3D()**: Computes standardized 3D estimates at common sample sizes (for gamma and alpha diversity) or common sample coverage levels (for gamma, alpha, and beta diversity), as well as four classes of coverage-based dissimilarity measures. Users can obtain estimates at default or user-specified sample sizes or coverage levels.
+
+- **ggiNEXTbeta3D()**: Visualizes the output from `iNEXTbeta3D()`.
+
+- **DataInfobeta3D()**: Provides basic information about (1) the reference sample from each individual assemblage, (2) the gamma reference sample from the pooled assemblage, and (3) the alpha reference sample from the joint assemblage.
+
+
+## <span style="color:red;">DATA INPUT FORMAT</span>
+
+To assess taxonomic, phylogenetic, and functional beta diversity among assemblages, information on species identity (or a unique identification code) and assemblage affiliation is required. For each dataset, species should be arranged in rows, with species names (or identification codes) used as row names. The columns represent assemblages for abundance data or sampling units for incidence data, as described below. Two types of species abundance/incidence data are supported:
+
+
+1. Individual-based abundance data (`datatype = "abundance"`):
+The input data for a single dataset with N assemblages should be arranged as a species-by-assemblage abundance <code>matrix/data.frame</code>, with species in rows and assemblages in columns. Species names (or unique identification codes) should be used as row names, and assemblage names as column names. Users can input multiple datasets collected from different localities, regions, plots, time periods, or other sampling contexts. The input for multiple datasets is a list of matrices/data.frames, with each element representing one dataset. Different datasets may contain different numbers of assemblages. For each dataset, `iNEXTbeta3D()` computes gamma, alpha, and beta diversity, as well as dissimilarity among all N assemblages and other relevant statistics. Users can also set `by_pair = TRUE` to obtain the corresponding results for every pair of assemblages.
+
+
+2. Sampling-unit-based incidence raw data (`datatype = "incidence_raw"`):
+For a dataset with N assemblages, the input data consist of a list of N matrices/data.frames, with each matrix representing a species-by-sampling-unit incidence matrix for one assemblage. Species are arranged in rows and sampling units in columns. Each entry must be either 0 (non-detection) or 1 (detection). Users can input multiple datasets, with each dataset represented by a list of species-by-sampling-unit incidence matrices/data.frames. The number of sampling units may vary among datasets. However, within each dataset, all assemblages must have the same number of sampling units. For each dataset, `iNEXTbeta3D()` computes gamma, alpha, and beta diversity, as well as dissimilarity among all N assemblages and other relevant statistics, based on incidence frequency counts obtained from the sampling units. Users can also set `by_pair = TRUE` to obtain the corresponding results for every pair of assemblages.
+
+
+#### Species abundance data format
+
+
+We use the tree species abundance data collected from two rainforest fragments/localities (“Marim” and “Rebio2”) in Brazil to assess beta diversity between the Edge and Interior habitats (assemblages) within each fragment; see Chao et al. (2023b) for details of the analysis. The demo data differ slightly from those analyzed in Chao et al. (2023b), as seven species were removed from the original pooled data because phylogenetic information was unavailable for these species. The data, named `Brazil_rainforests`, consist of a list of two species-by-assemblage abundance matrices, one for each fragment (“Marim” and “Rebio2”). Each matrix contains two assemblages (columns), “Edge” and “Interior”, with species in rows. Run the following code to view the data (only the first 15 rows of each matrix are shown).
+
+ 
+
+```{r eval=FALSE}
+
+data(Brazil_rainforests)
+Brazil_rainforests
+
+```
+
+```{r echo=FALSE}
+
+data(Brazil_rainforests)
+lapply(Brazil_rainforests, function(x) x[1:15,])
+
+```
+
+
+#### Species incidence raw data format
+
+We use tree species data collected from two second-growth rainforests, Cuatro Rios (CR) and Juan Enriquez (JE), in Costa Rica, as demo data to assess temporal beta diversity among three years (2005, 2011, and 2017) within each forest, with each year treated as an assemblage. In each forest, data were collected from a 1-ha (50 m × 200 m) forest plot.
+
+Because individuals of some tree species may exhibit intraspecific spatial aggregation within a 1-ha plot, individual trees may not be appropriately treated as independent sampling units. In such cases, it is statistically preferable to convert species abundance data within each forest into occurrence or incidence (detection/non-detection) data for subplots or quadrats. See Chao et al. (2023b) for details of the analysis.
+
+Each 1-ha forest was divided into 100 subplots (0.01 ha each), and only species incidence (detection/non-detection) records within each subplot were used to compute the incidence frequency of each species (i.e., the number of subplots in which the species was detected). By treating species incidence frequencies across subplots as proxies for species abundances, `iNEXT.beta3D` standardization can be adapted to accommodate spatially aggregated data and reduce the effects of intraspecific aggregation.
+
+The data, named `Second_growth_forests`, consist of a list containing two forests (`"CR_2005_2011_2017"` and `"JE_2005_2011_2017"`). Each forest is represented by a list of three species-by-sampling-unit incidence matrices corresponding to 2005, 2011, and 2017. Each matrix contains species in rows and 100 subplots (sampling units) in columns.
+
+Run the following code to view the incidence raw data (only the first 10 rows and 6 columns of each matrix are shown).
+
+
+```{r eval=FALSE}
+
+data(Second_growth_forests)
+Second_growth_forests
+
+```
+
+```{r echo=FALSE}
+
+data(Second_growth_forests)
+lapply(Second_growth_forests, function(x) lapply(x, function(y) y[1:10,1:6]))
+
+```
+
+#### Phylogenetic tree format for PD
+
+To perform phylogenetic diversity (PD) analysis, a phylogenetic tree (in Newick format) spanning all species observed across the datasets is required. For example, the phylogenetic tree spanning all species observed in the Marim and Rebio2 fragments is stored in the R dataset `Brazil_tree`. This dataset is used to demonstrate the computation of PD. A partial list of tip labels and node labels is shown below.
+
+
+```{r}
+
+data(Brazil_tree)
+Brazil_tree
+
+```
+
+
+#### Species pairwise distance matrix format for FD
+
+To perform functional diversity (FD) analysis, a pairwise distance matrix among all species observed across the datasets is required. The distance matrix can be computed from species traits using Gower distance. For example, the pairwise distance matrix for all species observed in the Marim and Rebio2 fragments is available in the R dataset `"Brazil_distM"`. This dataset is used to demonstrate the computation of FD. The first three rows and three columns of the distance matrix are shown below.
+
+
+```{r eval=FALSE}
+
+data(Brazil_distM)
+Brazil_distM
+
+```
+
+```{r echo=FALSE}
+
+data(Brazil_distM)
+round(Brazil_distM[1:3,1:3], 4)
+
+```
+
+
+## <span style="color:red;">MAIN FUNCTION: iNEXTbeta3D()</span>
+
+We first describe the main function `iNEXTbeta3D()` with default arguments:
+
+```{r eval=FALSE}
+
+iNEXTbeta3D(data, diversity = "TD", q = c(0, 1, 2), datatype = "abundance",
+            base = "coverage", level = NULL, nboot = 10, conf = 0.95,
+            PDtree = NULL, PDreftime = NULL, PDtype = 'AUC',  PDcut_number = 30,
+            FDdistM = NULL, FDtype = "AUC", FDtau = NULL, FDcut_number = 30,
+            by_pair = FALSE)
+
+```
+
+
+The arguments of this function are briefly described below and explained in more detail through illustrative examples in subsequent sections. By default (with <code>base = "coverage"</code>), the function computes coverage-based standardized 3D gamma, alpha, and beta diversity, as well as four dissimilarity indices, using coverage levels from 0.5 to 1. For q = 0, estimates corresponding to sample sizes greater than twice the reference sample size are excluded. When <code>base = "size"</code>, the function computes size-based standardized 3D gamma and alpha diversity estimates for sample sizes up to twice the reference sample size in each dataset. The function also computes standardized 3D estimates at user-specified sample sizes or coverage levels.
+
+<style>
+table td code {
+  white-space: nowrap;
+}
+</style>
+  
+<table style="width:100%;">
+<colgroup>
+<col width="20%">
+<col width="80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Argument</th>
+<th align="left">Description</th>
+</tr>
+
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><code>data</code></td>
+<td align="left">
+
+For <code>datatype = "abundance"</code>, data for a single dataset can be provided as a species-by-assemblage abundance <code>matrix/data.frame</code>, with species in rows and assemblages in columns. Data for multiple datasets should be provided as a <code>list</code> of such <code>matrices/data.frames</code>, with each element representing one dataset.
+
+For <code>datatype = "incidence_raw"</code>, data for a single dataset should be provided as a <code>list</code> of species-by-sampling-unit incidence <code>matrices/data.frames</code>, with each element representing one assemblage. Data for multiple datasets should be provided as a list of such lists, with each outer-list element representing one dataset. </td></tr>
+
+
+<tr class="even">
+<td align="center"><code>diversity</code></td>
+<td align="left">Selection of the diversity type: <code>diversity = "TD"</code> for Taxonomic diversity, <code>diversity = "PD"</code> for Phylogenetic diversity, and <code>diversity = "FD"</code> for Functional diversity.</td></tr>
+
+
+<tr class="odd">
+<td align="center"><code>q</code></td>
+<td align="left">A numerical vector specifying the diversity orders. Default is <code>c(0, 1, 2)</code>.</td></tr>
+
+
+<tr class="even">
+<td align="center"><code>datatype</code></td>
+<td align="left">Type of input data: individual-based abundance data (<code>datatype = "abundance"</code>) or sampling-unit-based incidence data (<code>datatype = "incidence_raw"</code>). For incidence raw data, each species-by-sampling-unit matrix contains only 0 (non-detection) or 1 (detection).</td></tr>
+
+
+
+<tr class="odd">
+<td align="center"><code>base</code></td>
+<td align="left">Standardization base: coverage-based rarefaction and extrapolation for gamma, alpha, beta diversity, as well as four classes of dissimilarity indices (<code>base = "coverage"</code>), or size-based rarefaction and extrapolation for gamma and alpha diversity (<code>base = "size"</code>). Default is <code>base = "coverage"</code>.</td></tr>
+
+
+
+<tr class="even">
+<td align="center"><code>level</code></td>
+<td align="left">
+A numeric vector specifying the target sample coverage levels (when <code>base = "coverage"</code>) or sample sizes (when <code>base = "size"</code>) used to compute standardized diversity and dissimilarity estimates. For coverage-based standardization, the specified coverage levels must be between 0 and 1. Setting <code>level = 1</code> requests estimates at complete coverage (i.e., asymptotic estimates), when supported by the estimator.
+
+By default, when <code>base = "coverage"</code>, the function initially uses coverage levels ranging from 0.5 to 1 in increments of 0.025, together with the estimated gamma and alpha coverage levels at the reference sample size and twice the reference sample size. For q = 0, estimates corresponding to sample sizes greater than twice the reference sample size are excluded. Thus, the extrapolation limits correspond to SC(2n, gamma) for gamma diversity and SC(2n, alpha) for alpha and beta diversity, as well as dissimilarity measures. For q = 1 and 2, estimates can be extended to complete coverage when supported by the data. The reference coverage for beta diversity and dissimilarity is defined as that for alpha diversity.
+
+When <code>base = "size"</code>, the function computes standardized 3D gamma and alpha diversity estimates at sample-size knots spanning rarefaction, the reference sample size, and extrapolation up to twice the reference sample size.</td></tr>
+
+
+
+
+
+<tr class="odd">
+<td align="center"><code>nboot</code></td>
+<td align="left">
+A non-negative integer specifying the number of bootstrap replications used to assess sampling uncertainty and construct confidence intervals. Bootstrap replications can be time-consuming. Set <code>nboot = 0</code> to skip the bootstrap procedures. Default is <code>nboot = 10</code>. For more accurate uncertainty estimates, a larger number of replications (e.g., 100 or 200) is recommended.</td></tr>
+
+<tr class="even">
+<td align="center"><code>conf</code></td>
+<td align="left">A number between 0 and 1 specifying the confidence level. Default is <code>conf = 0.95</code>.</td></tr>
+
+
+<tr class="odd">
+<td align="center"><code>PDtree</code></td>
+<td align="left"> (required when <code>diversity = "PD"</code>), a phylogenetic tree (an R <code>phylo</code> object) spanning all observed species across the input datasets. The tree can be imported from a file in Newick format.</td></tr>
+
+
+<tr class="even">
+<td align="center"><code>PDreftime</code></td>
+<td align="left">
+(argument only for <code>diversity = "PD"</code> and <code>PDtype = "meanPD"</code>), a numerical value specifying a fixed time reference point for phylogenetic diversity. Default is <code>PDreftime = NULL</code>, in which case the age of the root of the phylogenetic tree spanned by the pooled observed species is used.
+</td></tr>
+
+<tr class="odd">
+<td align="center"><code>PDtype</code></td>
+<td align="left">(argument only for <code>diversity = "PD"</code>), specifies the phylogenetic diversity measure: <code>PDtype = "meanPD"</code> for the effective number of equally divergent lineages at a specified reference time, or <code>PDtype = "AUC"</code> for an overall measure obtained by integrating and averaging mean phylogenetic diversity over all reference times from zero to the root age of the phylogenetic tree. Default is <code>PDtype = "AUC"</code>.</td></tr>
+
+
+<tr class="even">
+<td align="center"><code>PDcut_number</code></td>
+<td align="left">
+(argument only for <code>diversity = "PD"</code> and <code>PDtype = "AUC"</code>), an integer specifying the number of equally spaced integration points used to compute the AUC over the interval from zero to the root age of the phylogenetic tree. Default is <code>PDcut_number = 30</code>, and the minimum is 3.</td></tr>
+
+<tr class="odd">
+<td align="center"><code>FDdistM</code></td>
+<td align="left">	(required when <code>diversity = "FD"</code>), a species pairwise distance matrix covering all species observed across the input datasets.</td></tr>
+
+
+<tr class="even">
+<td align="center"><code>FDtype</code></td>
+<td align="left">(argument only for <code>diversity = "FD"</code>), specifies the functional diversity measure: <code>FDtype = "tau_value"</code> for FD at a specified threshold of functional distinctiveness, or <code>FDtype = "AUC"</code> for an overall FD measure obtained by integrating the tau-profile over threshold values from 0 to 1. Default is <code>FDtype = "AUC"</code>.</td></tr>
+
+
+<tr class="odd">
+<td align="center"><code>FDtau</code></td>
+<td align="left">
+(argument only for <code>diversity = "FD"</code> and <code>FDtype = "tau_value"</code>), a numeric value between 0 and 1 specifying the threshold of functional distinctiveness used to compute FD. If <code>FDtau = NULL</code> (default), the threshold is set to the mean pairwise functional distance between two individuals randomly selected from the pooled data across all datasets (i.e., Rao's quadratic entropy).</td></tr>
+
+<tr class="even">
+<td align="center"><code>FDcut_number</code></td>
+<td align="left">
+(argument only for <code>diversity = "FD"</code> and <code>FDtype = "AUC"</code>), an integer specifying the number of equally spaced integration points used to compute the AUC over the interval from 0 to 1. Default is <code>FDcut_number = 30</code>, and the minimum is 3.</td></tr>
+
+<tr class="odd">
+<td align="center"><code>by_pair</code></td>
+<td align="left">
+A logical variable specifying whether diversity decomposition is performed for all assemblages as a whole or for every pair of assemblages. If <code>by_pair = FALSE</code>, gamma, alpha, and beta diversity, as well as dissimilarity, are computed for all assemblages within each dataset considered as a whole. If <code>by_pair = TRUE</code>, the corresponding estimates are computed for every pair of assemblages. Default is <code>by_pair = FALSE</code>.</td></tr>
+
+
+</tbody>
+</table>
+
+This function returns an `iNEXTbeta3D` object that can be visualized using `ggiNEXTbeta3D()`, as described below. When `by_pair = FALSE`, `ggiNEXTbeta3D()` returns a single `ggplot` object. When `by_pair = TRUE`, it returns a named list of `ggplot` objects, with one plot for each dataset. Within each plot, different pairs of assemblages are distinguished by color.
+
+
+## Output of the main function iNEXTbeta3D() 
+
+
+By default (with `base = "coverage"`), for each of the three diversity dimensions (TD, PD, and FD), `iNEXTbeta3D()` returns an `"iNEXTbeta3D"` object containing seven data frames for each dataset:
+
+- gamma (standardized gamma diversity)
+- alpha (standardized alpha diversity)
+- beta (standardized beta diversity)
+- 1-C (standardized Sørensen-type non-overlap index)
+- 1-U (standardized Jaccard-type non-overlap index)
+- 1-V (standardized Sørensen-type turnover index)
+- 1-S (standardized Jaccard-type turnover index)
+
+For `PDtype = "meanPD"`, the gamma output includes `Gamma_PD` and `Gamma_meanPD`, whereas the alpha output includes `Alpha_PD` and `Alpha_meanPD`. These quantities satisfy `Gamma_PD = Gamma_meanPD × Reftime` and `Alpha_PD = Alpha_meanPD × Reftime`. The PD-based and meanPD-based beta diversity and dissimilarity estimates are identical after multiplicative decomposition; therefore, only one set of estimates is reported.
+
+
+When `base = "size"`, for each of the three diversity dimensions (TD, PD, and FD), `iNEXTbeta3D()` returns an `"iNEXTbeta3D"` object containing two data frames for each dataset:
+
+- gamma (size-based standardized gamma diversity)
+- alpha (size-based standardized alpha diversity)
+
+Size-based beta diversity and dissimilarity indices are not statistically valid measures and are therefore not provided.
+
+
+
+## <span style="color:red;">GRAPHIC DISPLAYS: FUNCTION ggiNEXTbeta3D()</span>
+
+The function `ggiNEXTbeta3D()` and its default arguments are introduced below. It supports output generated by `iNEXTbeta3D()` with both `by_pair = FALSE` and `by_pair = TRUE`.
+
+```{r eval=FALSE}
+
+ggiNEXTbeta3D(output, type = "B")  
+
+```
+
+
+<table style="width:100%;">
+<colgroup>
+<col width="20%">
+<col width="80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><code>output</code></td>
+<td align="left">An object returned by <code>iNEXTbeta3D()</code>.</td>
+</tr>
+<tr class="even">
+<td align="center"><code>type</code></td>
+<td align="left">
+(argument only for <code>base = "coverage"</code>),
+
+<code>type = "B"</code> generates R/E sampling curves for gamma, alpha, and beta diversity, whereas <code>type = "D"</code> generates R/E sampling curves for four dissimilarity indices. The <code>type</code> argument is not required when plotting size-based R/E sampling curves for gamma and alpha diversity.
+</td>
+</tr>
+</tbody>
+</table>
+
+
+<code>type = "B"</code> generates R/E sampling curves for gamma, alpha, and beta diversity, whereas <code>type = "D"</code> generates R/E sampling curves for four dissimilarity indices. The <code>type</code> argument is not required when plotting size-based R/E sampling curves for gamma and alpha diversity.
+
+
+
+ \code{type = "B"} generates R/E sampling curves for gamma, alpha, and beta diversity, whereas \code{type = "D"} generates R/E sampling
+ curves for four dissimilarity indices. The \code{type} argument is not required when plotting size-based R/E sampling curves for gamma and alpha diversity.
+
+
+The `ggiNEXTbeta3D()` function is a wrapper around the `ggplot2` package that creates rarefaction and extrapolation (R/E) sampling curves with a single line of code. When `by_pair = FALSE`, it returns a single `"ggplot"` object that can be further customized using `ggplot2` functions. When `by_pair = TRUE`, it returns a named list of `"ggplot"` objects, with one plot for each dataset.
+
+
+## <span style="color:blue;">TAXONOMIC DIVERSITY (TD): RAREFACTION/EXTRAPOLATION VIA EXAMPLES</span>
+
+### EXAMPLE 1: Abundance data with default sample sizes or coverage values 
+
+First, we use the `iNEXTbeta3D()` function with the `Brazil_rainforests` abundance data to compute coverage-based standardized taxonomic gamma, alpha, and beta diversity, as well as four dissimilarity indices, by running the following code:
+
+
+```{r eval=FALSE}
+
+## Coverage-based R/E Analysis with taxonomic diversity for abundance data
+data(Brazil_rainforests)
+
+output_TDc_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'TD', 
+                              datatype = 'abundance', base = "coverage", nboot = 10)
+output_TDc_abun
+
+```
+
+The output contains seven data frames: `gamma`, `alpha`, `beta`, `1-C`, `1-U`, `1-V`, and `1-S`. Each data frame includes the dataset name (`Dataset`), the diversity order (`Order.q`), and the target standardized coverage value (`SC`). When `by_pair = TRUE`, the output also includes the assemblage pair (`Pair`). The corresponding sample size (`Size` for abundance data or `mT` for incidence data) is reported for gamma and alpha diversity, but not for beta diversity or dissimilarity indices. The estimated diversity or dissimilarity is reported in the corresponding `Gamma`, `Alpha`, `Beta`, or `Dissimilarity` column. The `Method` column indicates Rarefaction, Observed, or Extrapolation, depending on whether the target coverage is less than, equal to, or greater than the coverage of the reference sample. For beta diversity and dissimilarity measures, the reference coverage is defined as that for alpha diversity. The output also includes the standard error (`s.e.`) and the bootstrap lower and upper confidence limits (`LCL` and `UCL`). These estimates and confidence intervals are used to construct rarefaction and extrapolation (R/E) sampling curves. For `PDtype = "meanPD"`, gamma diversity is reported as `Gamma_PD` and `Gamma_meanPD`, whereas alpha diversity is reported as `Alpha_PD` and `Alpha_meanPD`, with `Gamma_PD = Gamma_meanPD × Reftime` and `Alpha_PD = Alpha_meanPD × Reftime`.
+
+By default, for coverage-based standardization, the function initially considers standardized coverage levels ranging from 0.5 to 1 in increments of 0.025. For q = 0, estimates corresponding to sample sizes greater than twice the reference sample size are excluded. Thus, the extrapolation limits correspond to SC(2n, gamma) for gamma diversity and SC(2n, alpha) for alpha and beta diversity, as well as dissimilarity measures. For q = 1 and 2, estimates can be extended to complete coverage (SC = 1) when supported by the data. In addition, the following four coverage values are included in the initial set of coverage levels: `SC(n, alpha)`, `SC(2n, alpha)`, `SC(n, gamma)`, and `SC(2n, gamma)`. The corresponding results are retained when they fall within the applicable estimation range. Here, `SC(n, alpha)` denotes the estimated coverage for the alpha reference sample size n, whereas `SC(2n, alpha)` denotes the estimated coverage for an extrapolated alpha sample of size 2n in the joint assemblage. These values are reported as `SC(n)` and `SC(2n)` for `"Joint assemblage (for alpha)"` in the `Assemblage` column of the output from `DataInfobeta3D()`. Similarly, `SC(n, gamma)` and `SC(2n, gamma)` denote the corresponding coverage values for the gamma reference sample and its extrapolated sample of size 2n in the pooled assemblage. These values are reported as `SC(n)` and `SC(2n)` for `"Pooled assemblage (for gamma)"` in the output from `DataInfobeta3D()`. For beta diversity and dissimilarity measures, the observed sample coverage and extrapolation limit are defined as those for alpha diversity. For incidence data, the corresponding coverage values are denoted by `SC(T, alpha)`, `SC(2T, alpha)`, `SC(T, gamma)`, and `SC(2T, gamma)`, respectively.
+
+Because the default standardized coverage range starts at 0.5, the default setting (`level = NULL`) is not applicable when the observed sample coverage of either the alpha or gamma reference sample is below 50%. In such cases, users should specify appropriate coverage values through the `level` argument. Extrapolation beyond twice the reference sample size for q = 0 is not recommended because the resulting estimates may be subject to increased bias. Below, we show the output for taxonomic beta diversity between the "Edge" and "Interior" habitats in the "Marim" fragment.
+
+
+
+```{r echo=FALSE}
+
+output_TDc_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'TD', 
+                              datatype = 'abundance', base = "coverage", nboot = 10)
+
+tmp = output_TDc_abun$Marim$beta
+
+num_cols <- c("SC", "Beta", "s.e.", "LCL", "UCL")
+tmp[, num_cols] <- round(tmp[, num_cols], 3)
+
+tmp = tmp[, -ncol(tmp)]
+tmp
+
+```
+
+
+
+Run the following code to plot the two types of rarefaction and extrapolation (R/E) sampling curves:
+
+  
+```{r, fig.align='center', fig.height=6, fig.width=6}
+
+## Coverage-based R/E curves for taxonomic gamma, alpha and beta diversity 
+ggiNEXTbeta3D(output_TDc_abun, type = 'B')
+
+```
+
+
+```{r, fig.align='center', fig.height=8, fig.width=6}
+
+## Coverage-based R/E curves for four taxonomic dissimilarity indices
+ggiNEXTbeta3D(output_TDc_abun, type = 'D')
+
+```
+
+
+The following code generates size-based rarefaction and extrapolation (R/E) sampling curves for taxonomic gamma and alpha diversity:
+  
+```{r, fig.align='center', fig.height=5, fig.width=6}
+
+## Size-based R/E curves with taxonomic gamma and alpha diversity
+data(Brazil_rainforests)
+output_TDs_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'TD', 
+                              datatype = 'abundance', base = "size", nboot = 10)
+
+ggiNEXTbeta3D(output_TDs_abun)
+
+```
+
+
+
+### EXAMPLE 2: Incidence raw data with default sample sizes or coverage values (all assemblages as a whole)
+
+We use the `Second_growth_forests` incidence raw data to compute coverage-based standardized taxonomic gamma, alpha, and beta diversity, as well as four dissimilarity indices, by setting `base = "coverage"`. Size-based standardized taxonomic gamma and alpha diversity can also be computed by setting `base = "size"`. Run the following code to perform coverage-based analysis of the incidence raw data. The resulting output is similar in structure to that for abundance data and is therefore omitted.
+
+
+```{r eval=FALSE}
+
+## Coverage-based R/E Analysis with taxonomic diversity for incidence raw data (all assemblages as a whole)
+data(Second_growth_forests)
+
+output_TDc_inci = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
+                              datatype = 'incidence_raw', base = "coverage", nboot = 10)
+output_TDc_inci
+
+```
+
+
+```{r echo=FALSE}
+
+output_TDc_inci = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
+                              datatype = 'incidence_raw', base = "coverage", nboot = 10)
+
+# lapply(output_TDc_inci, function(x) 
+#   
+#   lapply(x[1:3], function(y) {
+#     
+#     index1 = which(y$SC == min(y$SC))
+#     index2 = which( (y$Order.q != 0 & y$SC == max(y$SC)) | (y$Order.q == 0 & y$SC == max(y[y$Order.q == 0, "SC"])) )
+#     index3 = which(y$Method %in% c("Observed", "Observed_C(n, alpha)"))
+#     
+#     index = sort(unique(c(index1, index1 + 1, index2, index2 - 1, index3 - 1, index3, index3 + 1)))
+#     
+#     tmp = y[index,]
+#     tmp[,c(3:5, 7:9)] = round(tmp[,c(3:5, 7:9)], 3)
+#     tmp
+#   })
+# )
+```
+
+
+The following code generates coverage-based R/E sampling curves for taxonomic gamma, alpha, and beta diversity among the three years (2005, 2011, and 2017) in the two second-growth forests (CR and JE):
+  
+  
+```{r, fig.align='center', fig.height=6, fig.width=6}
+
+## Coverage-based R/E curves with taxonomic gamma, alpha and beta diversity 
+
+ggiNEXTbeta3D(output_TDc_inci, type = 'B')
+
+```
+
+
+The following code generates size-based R/E sampling curves for taxonomic gamma and alpha diversity:
+
+```{r, fig.align='center', fig.height=5, fig.width=6}
+
+## Size-based R/E curves with taxonomic gamma and alpha diversity (all assemblages as a whole)
+data(Second_growth_forests)
+
+output_TDs_inci = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD', 
+                              datatype = 'incidence_raw', base = "size", nboot = 10)
+
+ggiNEXTbeta3D(output_TDs_inci)
+
+```
+
+
+### EXAMPLE 3: Incidence raw data with default sample sizes or coverage values for every pair of assemblages
+
+When a dataset contains N assemblages (N > 2), as in the `Second_growth_forests` incidence dataset (N = 3), the default output from `iNEXTbeta3D()` provides gamma, alpha, and beta diversity, as well as dissimilarity, for all N assemblages considered as a whole. By setting `by_pair = TRUE`, users can obtain the corresponding output for every pair of assemblages. Here, we use the `Second_growth_forests` data to assess pairwise temporal beta diversity among three years (2005 vs. 2011, 2005 vs. 2017, and 2011 vs. 2017) within each forest.
+
+
+```{r eval=FALSE}
+
+## Coverage-based R/E Analysis for every pair of assemblages with taxonomic diversity for incidence raw data
+data(Second_growth_forests)
+
+output_TDc_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD',
+                                   datatype = 'incidence_raw', base = "coverage",
+                                   nboot = 10, by_pair = TRUE)
+output_TDc_inci_pair
+
+```
+
+The output provides gamma, alpha, and beta diversity, as well as four dissimilarity indices, for each pair of assemblages. In the output, the `Pair` column identifies the two assemblages being compared. The corresponding coverage-based R/E sampling curves for taxonomic gamma, alpha, and beta diversity can be plotted using `ggiNEXTbeta3D()`. When `by_pair = TRUE`, the function returns a named list of plots, with one plot for each dataset. Within each plot, different pairs of assemblages are distinguished by color.
+
+
+
+```{r echo=FALSE}
+output_TDc_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD',
+                                   datatype = 'incidence_raw', base = "coverage",
+                                   nboot = 10, by_pair = TRUE)
+
+
+```
+
+For example, the following code displays the coverage-based R/E sampling curves for taxonomic gamma, alpha, and beta diversity for every pair of years in the CR forest:
+
+
+
+```{r}
+
+## Coverage-based R/E curves for every pair of assemblages in CR
+plot_TDc_inci_pair = ggiNEXTbeta3D(output_TDc_inci_pair, type = 'B')
+plot_TDc_inci_pair[["CR_2005_2011_2017"]]
+
+```
+
+
+Similarly, the corresponding coverage-based R/E sampling curves for every pair of years in the JE forest can be displayed using the following code:
+
+
+```{r}
+
+## Coverage-based R/E curves for every pair of assemblages in JE
+plot_TDc_inci_pair[["JE_2005_2011_2017"]]
+
+```
+
+The following code generates size-based R/E sampling curves for taxonomic gamma and alpha diversity for every pair of assemblages in the CR forest:
+
+
+```{r}
+
+## Size-based R/E Analysis for every pair of assemblages with taxonomic diversity
+data(Second_growth_forests)
+
+output_TDs_inci_pair = iNEXTbeta3D(data = Second_growth_forests, diversity = 'TD',
+                                   datatype = 'incidence_raw', base = "size",
+                                   nboot = 10, by_pair = TRUE)
+
+plot_TDs_inci_pair = ggiNEXTbeta3D(output_TDs_inci_pair)
+plot_TDs_inci_pair[["CR_2005_2011_2017"]]
+
+```
+
+
+
+## <span style="color:blue;">PHYLOGENETIC DIVERSITY (PD): RAREFACTION/EXTRAPOLATION VIA EXAMPLES</span>
+
+### EXAMPLE 4: Abundance data with default sample sizes or coverage values
+
+As with taxonomic diversity, `iNEXTbeta3D()` computes coverage-based standardized phylogenetic gamma, alpha, and beta diversity, as well as four dissimilarity indices. It also computes size-based standardized phylogenetic gamma and alpha diversity. To perform PD analysis, a phylogenetic tree spanning all species observed across the input datasets is required. The species names (or identification codes) in the phylogenetic tree must exactly match those in the corresponding abundance or incidence data. Two types of phylogenetic rarefaction and extrapolation (R/E) sampling curves, coverage-based and size-based, are also provided.
+
+The required argument for PD analysis is `PDtree`. For example, the phylogenetic tree spanning all species observed in the Marim and Rebio2 fragments is available in the R dataset `Brazil_tree`. We therefore specify `PDtree = Brazil_tree`. Three optional arguments are `PDtype`, `PDreftime`, and `PDcut_number`. Two phylogenetic diversity measures are available through `PDtype`: `"meanPD"` (the effective number of equally divergent lineages at a specified reference time) and `"AUC"` (an overall measure obtained by integrating and averaging meanPD across reference times from zero to the root age of the phylogenetic tree). The default is `PDtype = "AUC"`.
+
+For `PDtype = "meanPD"`, `PDreftime` specifies a fixed reference time for phylogenetic diversity. If `PDreftime = NULL` (default), the root age of the phylogenetic tree spanning the pooled observed species is used. At the specified reference time, meanPD represents the effective number of lineages, whereas PD represents the effective total branch length. The two measures are related by `PD = meanPD × Reftime`.
+
+When the root age is large, meanPD may yield relatively low values because the effective number of lineages with long lineage lengths is necessarily low. The AUC approach provides an overall measure that integrates information across all reference times and is therefore less dependent on the choice of a single reference time.
+
+For `PDtype = "AUC"`, `PDcut_number` specifies the number of equally spaced integration points used to numerically compute the AUC over the interval from zero to the root age. The default is 30, and the minimum is 3. A larger number of integration points may improve the accuracy of the numerical approximation.
+
+Run the following code to perform coverage-based PD analysis using the default AUC measure:
+
+
+
+
+```{r eval=FALSE}
+
+## Coverage-based R/E Analysis with phylogenetic diversity for abundance data
+data(Brazil_rainforests)
+data(Brazil_tree)
+
+output_PDc_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'PD', 
+                              datatype = 'abundance', base = "coverage", nboot = 10, 
+                              PDtree = Brazil_tree, PDtype = 'AUC', PDcut_number = 30)
+output_PDc_abun
+
+```
+
+
+```{r echo=FALSE}
+
+data(Brazil_rainforests)
+data(Brazil_tree)
+
+output_PDc_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'PD', 
+                              datatype = 'abundance', base = "coverage", nboot = 10, 
+                              PDtree = Brazil_tree, PDtype = 'AUC', PDcut_number = 30)
+
+```
+
+
+
+The following code generates coverage-based R/E sampling curves for phylogenetic AUC-based gamma, alpha, and beta diversity:
+
+
+```{r, fig.align='center', fig.height=6, fig.width=6}
+
+## Coverage-based R/E sampling curves for phylogenetic gamma, alpha and beta diversity
+ggiNEXTbeta3D(output_PDc_abun, type = 'B')
+
+```
+
+The following code generates size-based R/E sampling curves for phylogenetic AUC-based gamma and alpha diversity:
+
+  
+```{r, fig.align='center', fig.height=5, fig.width=6}
+
+## Size-based R/E curves for phylogenetic gamma and alpha diversity
+data(Brazil_rainforests)
+data(Brazil_tree)
+
+output_PDs_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'PD', 
+                              datatype = 'abundance', base = "size", nboot = 10, 
+                              PDtree = Brazil_tree, PDtype = 'AUC', PDcut_number = 30)
+ggiNEXTbeta3D(output_PDs_abun)
+
+```
+
+
+
+## <span style="color:blue;">FUNCTIONAL DIVERSITY (FD): RAREFACTION/EXTRAPOLATION VIA EXAMPLES</span>
+
+### EXAMPLE 5: Abundance data with default sample sizes or coverage values
+
+As with taxonomic and phylogenetic diversity, `iNEXTbeta3D()` computes coverage-based standardized functional gamma, alpha, and beta diversity, as well as four dissimilarity indices. It also computes size-based standardized functional gamma and alpha diversity. To perform FD analysis, a species pairwise distance matrix covering all species observed across the input datasets is required. The species names (or identification codes) in the distance matrix must exactly match those in the corresponding abundance or incidence data. Two types of functional rarefaction and extrapolation (R/E) sampling curves, coverage-based and size-based, are also provided.
+
+The required argument for FD analysis is `FDdistM`. For example, the species pairwise distance matrix for all species observed in the Marim and Rebio2 fragments is available in the R dataset `Brazil_distM`. We therefore specify `FDdistM = Brazil_distM`. Three optional arguments are:
+
+(1) `FDtype`: Two functional diversity measures are available. `FDtype = "tau_value"` computes FD at a specified threshold of functional distinctiveness (tau), whereas `FDtype = "AUC"` provides an overall FD measure obtained by integrating the tau-profile over threshold values from 0 to 1. The default is `FDtype = "AUC"`.
+
+(2) `FDtau`: A numeric value specifying the threshold of functional distinctiveness used to compute FD when `FDtype = "tau_value"`. The tau value determines the level at which species are considered functionally distinct. If `FDtau = NULL` (default), the threshold is set to the mean pairwise functional distance between two individuals randomly selected from the pooled data across all datasets (i.e., Rao's quadratic entropy).
+
+(3) `FDcut_number`: An integer specifying the number of equally spaced integration points used to numerically compute the AUC over the interval from 0 to 1. The default is 30, and the minimum is 3. A larger number of integration points may improve the accuracy of the numerical approximation.
+
+Run the following code to perform coverage-based FD analysis using the default AUC measure. The numerical output is omitted because its structure is similar to that of the preceding TD and PD examples; the corresponding R/E sampling curves are shown below.
+
+
+
+```{r eval=FALSE}
+
+## Coverage-based R/E Analysis with functional diversity for abundance data - FDtype = 'AUC' (area 
+## under curve) by considering all threshold values between zero and one
+data(Brazil_rainforests)
+data(Brazil_distM)
+
+output_FDc_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'FD', 
+                              datatype = 'abundance', base = "coverage", nboot = 10, 
+                              FDdistM = Brazil_distM, FDtype = 'AUC', FDcut_number = 30)
+output_FDc_abun
+```
+
+
+```{r echo=FALSE}
+
+data(Brazil_rainforests)
+data(Brazil_distM)
+
+output_FDc_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'FD', 
+                              datatype = 'abundance', base = "coverage", nboot = 10, 
+                              FDdistM = Brazil_distM, FDtype = 'AUC', FDcut_number = 30)
+```
+
+
+The following code generates coverage-based R/E sampling curves for functional AUC-based gamma, alpha, and beta diversity:
+
+
+```{r, fig.align='center', fig.height=6, fig.width=6}
+
+## Coverage-based R/E sampling curves for functional gamma, alpha and beta diversity
+ggiNEXTbeta3D(output_FDc_abun, type = 'B')
+```
+
+
+The following code generates size-based R/E sampling curves for functional AUC-based gamma and alpha diversity:
+
+  
+```{r, fig.align='center', fig.height=5, fig.width=6}
+
+## Size-based R/E curves for functional gamma and alpha diversity
+data(Brazil_rainforests)
+data(Brazil_distM)
+
+output_FDs_abun = iNEXTbeta3D(data = Brazil_rainforests, diversity = 'FD', 
+                              datatype = 'abundance', base = "size", nboot = 10, 
+                              FDdistM = Brazil_distM, FDtype = 'AUC', FDcut_number = 30)
+ggiNEXTbeta3D(output_FDs_abun)
+
+```
+
+
+
+## <span style="color:red;">DATA INFORMATION: FUNCTION DataInfobeta3D()</span>
+
+The function `DataInfobeta3D()` provides basic information about (1) the reference sample from each individual assemblage, (2) the gamma reference sample from the pooled assemblage, and (3) the alpha reference sample from the joint assemblage. The function and its default arguments are shown below:
+
+```{r eval=FALSE}
+DataInfobeta3D(data, diversity = "TD", datatype = "abundance",
+               PDtree = NULL, PDreftime = NULL, PDtype = "meanPD",
+               FDdistM = NULL, FDtype = "AUC", FDtau = NULL, by_pair = FALSE)  
+```
+
+Arguments shared by `DataInfobeta3D()` and `iNEXTbeta3D()` have the same definitions as described above. The function returns basic information for each of the three diversity dimensions, including the reference sample size, observed species richness, estimated sample coverage at the reference and doubled sample sizes (`SC(n)` and `SC(2n)` for abundance data, or `SC(T)` and `SC(2T)` for incidence data), and other relevant statistics. We use the `Brazil_rainforests` dataset to demonstrate the function for each diversity dimension.
+
+
+```{r eval=FALSE}
+## Data information for taxonomic diversity
+data(Brazil_rainforests)
+DataInfobeta3D(data = Brazil_rainforests, diversity = 'TD', datatype = 'abundance')
+```
+
+```{r echo=FALSE}
+## Data information for taxonomic diversity
+data(Brazil_rainforests)
+tmp = DataInfobeta3D(data = Brazil_rainforests, diversity = 'TD', datatype = 'abundance')
+tmp[,c("SC(n)","SC(2n)")] = round(tmp[,c("SC(n)","SC(2n)")], 3)
+tmp
+```
+
+Output description:
+
+- `Dataset` = the input datasets.
+
+- `Pair` = the pair of assemblages being compared; this column is included only when `by_pair = TRUE`.
+
+- `Assemblage` = individual assemblages, `"Pooled assemblage"` (for gamma diversity), or `"Joint assemblage"` (for alpha diversity).
+
+- `n` = number of observed individuals in the reference sample (sample size).
+
+- `S.obs` = number of observed species in the reference sample.
+
+- `SC(n)` = estimated sample coverage of the reference sample.
+
+- `SC(2n)` = estimated sample coverage of twice the reference sample size.
+
+- `f1`–`f5` = the first five species abundance frequency counts in the reference sample.
+
+Below, we use the demo dataset `Second_growth_forests` to illustrate the output of `DataInfobeta3D()` for incidence raw data:
+
+
+```{r eval=FALSE}
+## Data information for taxonomic diversity with incidence data
+data(Second_growth_forests)
+
+DataInfobeta3D(data = Second_growth_forests, diversity = 'TD', datatype = 'incidence_raw',
+               by_pair = FALSE)
+```
+
+```{r echo=FALSE}
+## Data information for taxonomic diversity with incidence data
+data(Second_growth_forests)
+
+tmp = DataInfobeta3D(data = Second_growth_forests, diversity = 'TD', datatype = 'incidence_raw',
+                     by_pair = FALSE)
+tmp[,c("SC(T)","SC(2T)")] = round(tmp[,c("SC(T)","SC(2T)")], 3)
+tmp
+```
+
+Information description:
+
+- `Dataset` = the input datasets.
+
+- `Pair` = the pair of assemblages being compared; this column is included only when `by_pair = TRUE`.
+
+- `Assemblage` = individual assemblages, `"Pooled assemblage"` (for gamma diversity), or `"Joint assemblage"` (for alpha diversity).
+
+- `T` = number of sampling units in the reference sample (sample size for incidence data).
+
+- `U` = total number of incidences in the reference sample.
+
+- `S.obs` = number of observed species in the reference sample.
+
+- `SC(T)` = estimated sample coverage of the reference sample.
+
+- `SC(2T)` = estimated sample coverage of twice the reference sample size.
+
+- `Q1`–`Q5` = the first five species incidence frequency counts in the reference sample.
+
+
+To obtain the corresponding data information for every pair of assemblages within each dataset, set `by_pair = TRUE` and run the following code:
+
+
+```{r eval=FALSE}
+## Data information for taxonomic diversity for every pair of assemblages (incidence data)
+data(Second_growth_forests)
+
+
+DataInfobeta3D(data = Second_growth_forests, diversity = 'TD', datatype = 'incidence_raw', 
+               by_pair = TRUE)
+```
+
+```{r echo=FALSE}
+## Data information for taxonomic diversity for every pair of assemblages (incidence data)
+data(Second_growth_forests)
+
+tmp = DataInfobeta3D(data = Second_growth_forests, diversity = 'TD', datatype = 'incidence_raw', 
+                     by_pair = TRUE)
+tmp[,c("SC(T)","SC(2T)")] = round(tmp[,c("SC(T)","SC(2T)")], 3)
+tmp
+```
+
+
+The output columns have the same definitions as those described above and are therefore not repeated here. When `by_pair = TRUE`, the `Pair` column identifies the two assemblages being compared.
+
+
+```{r eval=FALSE}
+
+## Data information for mean phylogenetic diversity
+data(Brazil_rainforests)
+data(Brazil_tree)
+DataInfobeta3D(data = Brazil_rainforests, diversity = 'PD', datatype = 'abundance', 
+               PDtype = 'meanPD', PDtree = Brazil_tree, PDreftime = NULL)
+
+```
+
+```{r echo=FALSE}
+
+## Data information for mean phylogenetic diversity
+data(Brazil_rainforests)
+data(Brazil_tree)
+tmp = DataInfobeta3D(data = Brazil_rainforests, diversity = 'PD', datatype = 'abundance', 
+                     PDtype = 'meanPD', PDtree = Brazil_tree, PDreftime = NULL)
+tmp[,c("SC(n)","SC(2n)")] = round(tmp[,c("SC(n)","SC(2n)")], 3)
+tmp
+
+```
+
+
+For `PDtype = "meanPD"`, the output information is described as follows:
+
+- `Dataset`, `Pair`, `Assemblage`, `n`, `S.obs`, `SC(n)`, and `SC(2n)` = definitions are the same as those in the TD output.
+
+- `PD.obs` = the observed total branch length in the phylogenetic tree spanned by all observed species.
+
+- `meanPD.obs` = the observed mean phylogenetic diversity, calculated as `PD.obs / Reftime`.
+
+- `f1*`, `f2*` = the numbers of singletons and doubletons, respectively, in the node/branch abundance set.
+
+- `g1`, `g2` = the total branch lengths of those singletons and doubletons, respectively, in the node/branch abundance set.
+
+- `Reftime` = the user-specified reference time used for phylogenetic diversity calculations. If `PDreftime = NULL` (default), the root age of the phylogenetic tree spanning the pooled observed species is used.
+
+
+
+```{r eval=FALSE}
+
+## Data information for phylogenetic diversity when all time reference points are considered
+data(Brazil_rainforests)
+data(Brazil_tree)
+
+DataInfobeta3D(data = Brazil_rainforests, diversity = 'PD',
+               datatype = 'abundance', PDtype = 'AUC',
+               PDtree = Brazil_tree)
+               
+```
+
+
+
+```{r echo=FALSE}
+
+## Data information for phylogenetic diversity when all time reference points are considered
+data(Brazil_rainforests)
+data(Brazil_tree)
+
+tmp = DataInfobeta3D(data = Brazil_rainforests, diversity = 'PD',
+               datatype = 'abundance', PDtype = 'AUC',
+               PDtree = Brazil_tree)
+               
+tmp[,c("SC(n)","SC(2n)")] = round(tmp[,c("SC(n)","SC(2n)")], 3)
+
+tmp
+
+```
+
+
+For `PDtype = "AUC"`, the output information is described as follows:
+
+- `Dataset`, `Pair`, `Assemblage`, `n`, `S.obs`, `SC(n)`, and `SC(2n)` = definitions are the same as those in the TD output.
+
+- `Tmax` = the integration end time for AUC-based phylogenetic diversity, corresponding to the root age of the phylogenetic tree spanning the pooled observed species. The integration starts at zero.
+
+
+
+
+```{r eval=FALSE}
+
+## Data information for functional diversity (FDtype = 'tau_value', FDtau = NULL)
+data(Brazil_rainforests)
+data(Brazil_distM)
+DataInfobeta3D(data = Brazil_rainforests, diversity = 'FD', datatype = 'abundance', 
+               FDdistM = Brazil_distM, FDtype = 'tau_value', FDtau = NULL)
+
+```
+
+```{r echo=FALSE}
+
+## Data information for functional diversity (FDtype = 'tau_value', FDtau = NULL)
+data(Brazil_rainforests)
+data(Brazil_distM)
+tmp = DataInfobeta3D(data = Brazil_rainforests, diversity = 'FD', datatype = 'abundance', 
+                     FDdistM = Brazil_distM, FDtype = 'tau_value', FDtau = NULL)
+tmp[,c("SC(n)","SC(2n)","Tau")] = round(tmp[,c("SC(n)","SC(2n)","Tau")], 3)
+tmp
+
+```
+
+
+For `FDtype = "tau_value"`, the output information is described as follows:
+
+- `Dataset`, `Pair`, `Assemblage`, `n`, `S.obs`, `SC(n)`, and `SC(2n)` = definitions are the same as those in the TD output.
+
+- `a1*`, `a2*` = the numbers of singletons and doubletons, respectively, in the functional abundances at the specified threshold of functional distinctiveness (`Tau`).
+
+- `h1`, `h2` = the total contributions of functional singletons and doubletons, respectively, at the specified threshold.
+
+- `Tau` = the user-specified threshold level for functional distinctiveness. If `FDtau = NULL` (default), the threshold is set to `dmean`, the mean distance between two individuals randomly selected from the pooled data across all datasets.
+
+For comparison, we also consider a user-specified threshold value of `FDtau = 0.2` to illustrate how the data information changes with the selected threshold.
+
+```{r eval=FALSE}
+## Data information for functional diversity (tau = 0.2)
+data(Brazil_rainforests)
+data(Brazil_distM)
+DataInfobeta3D(data = Brazil_rainforests, diversity = 'FD',
+               datatype = 'abundance', FDdistM = Brazil_distM,
+               FDtype = 'tau_value', FDtau = 0.2)
+```
+
+```{r echo=FALSE}
+## Data information for functional diversity (tau = 0.2)
+tmp = DataInfobeta3D(data = Brazil_rainforests, diversity = 'FD',
+                     datatype = 'abundance', FDdistM = Brazil_distM,
+                     FDtype = 'tau_value', FDtau = 0.2)
+tmp[, c("SC(n)", "SC(2n)", "Tau")] =
+  round(tmp[, c("SC(n)", "SC(2n)", "Tau")], 3)
+tmp
+```
+
+
+Compared with the default threshold (`Tau = 0.343`), at which `a1*`, `a2*`, `h1`, and `h2` are all zero, the user-specified threshold (`Tau = 0.2`) yields nonzero values for some of these quantities. This example illustrates that singleton- and doubleton-related statistics depend on the selected threshold of functional distinctiveness.
+
+
+
+```{r eval=FALSE}
+## Data information for functional diversity (FDtype = 'AUC')
+data(Brazil_rainforests)
+data(Brazil_distM)
+DataInfobeta3D(data = Brazil_rainforests, diversity = 'FD', datatype = 'abundance', 
+               FDdistM = Brazil_distM, FDtype = 'AUC')
+```
+
+```{r echo=FALSE}
+## Data information for functional diversity (FDtype = 'AUC')
+data(Brazil_rainforests)
+data(Brazil_distM)
+tmp = DataInfobeta3D(data = Brazil_rainforests, diversity = 'FD', datatype = 'abundance', 
+                     FDdistM = Brazil_distM, FDtype = 'AUC')
+tmp[,c("SC(n)","SC(2n)","dmean","dmax")] = round(tmp[,c("SC(n)","SC(2n)","dmean","dmax")], 3)
+tmp
+```
+
+For `FDtype = "AUC"`, the output information is described as follows:
+
+- `Dataset`, `Pair`, `Assemblage`, `n`, `S.obs`, `SC(n)`, and `SC(2n)` = definitions are the same as those in the TD output.
+
+- `dmin` = the minimum distance among all non-diagonal elements in the species pairwise distance matrix.
+
+- `dmean` = the mean functional distance between two individuals randomly selected from the assemblage under consideration.
+
+- `dmax` = the maximum pairwise distance among species in the distance matrix.
+
+
+
+
+
+
+## License and feedback
+The `iNEXT.beta3D` package is licensed under the GPLv3. To help refine `iNEXT.beta3D`, users' comments or feedback would be welcome (please send them to Anne Chao or report an issue on the `iNEXT.beta3D` GitHub [iNEXT.beta3D_github](https://github.com/AnneChao/iNEXT.beta3D)). 
+
+
+## References
+- Chao, A., Chiu, C.-H., Hu, K.-H., and Zelený, D. (2023a). Revisiting Alwyn H. Gentry's forest transect data: a statistical sampling-model-based approach. <i>Japanese Journal of Statistics and Data Science</i>, 6, 861-884. (https://doi.org/10.1007/s42081-023-00214-1) 
+
+- Chao, A., Chiu, C.-H., Villéger, S., Sun, I.-F., Thorn, S., Lin, Y.-C., Chiang, J. M., and Sherwin, W. B. (2019). An attribute-diversity approach to functional diversity, functional beta diversity, and related (dis)similarity measures. Ecological Monographs, 89, e01343.
+
+- Chao, A., Henderson, P. A., Chiu, C.-H., Moyes, F., Hu, K.-H., Dornelas, M. and Magurran, A. E. (2021). Measuring temporal change in alpha diversity: a framework integrating taxonomic, phylogenetic and functional diversity and the iNEXT.3D standardization. Methods in Ecology and Evolution, 12, 1926-1940.
+
+- Chao, A., Thorn, S., Chiu, C.-H., Moyes, F., Hu, K.-H., Chazdon, R. L., Wu, J., Magnago, L. F. S., Dornelas, M., Zelený, D., Colwell, R. K., and Magurran, A. E. (2023b). Rarefaction and extrapolation with beta diversity under a framework of Hill numbers: the iNEXT.beta3D standardization. <i>Ecological Monographs</i> e1588. (https://doi.org/10.1002/ecm.1588)
+
+
+
+
