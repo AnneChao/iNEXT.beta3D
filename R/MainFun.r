@@ -673,7 +673,7 @@ iNEXTbeta3D = function(data, diversity = 'TD', q = c(0, 1, 2), datatype = 'abund
       
       PD_AUC_max = H_max
 
-      PDcut = seq(from = 1e-08,to = PD_AUC_max,length.out = PDcut_number)
+      PDcut = seq(from = 1e-04,to = PD_AUC_max,length.out = PDcut_number)
       
       PDwidth = diff(PDcut)
       
