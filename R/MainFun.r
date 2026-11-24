@@ -5057,11 +5057,9 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance', PDtype
         x = data[[i]]
         if (is.null(colnames(x))) colnames(x) = paste('Assemblage_', 1:ncol(x), sep = "")
         
-        single = DataInfo3D(x, diversity = "PD", datatype = "abundance", PDtree = PDtree, PDreftime = PDreftime)
+        single = DataInfo3D(x, diversity = "PD", datatype = "abundance", PDtree = PDtree, PDreftime = PDreftime, PDtype = "meanPD")
         
-        single = single %>%
-          mutate(meanPD.obs = PD.obs / PDreftime, .after = PD.obs)
-        
+
         if (by_pair == FALSE) {
           
           data_gamma = rowSums(x)
@@ -5188,11 +5186,9 @@ DataInfobeta3D = function(data, diversity = 'TD', datatype = 'abundance', PDtype
         x = lapply(data[[i]], as.matrix)
         if (is.null(names(x))) names(x) = paste('Assemblage_', 1:length(x), sep = "")
         
-        single = DataInfo3D(x, diversity = "PD", datatype = "incidence_raw", PDtree = PDtree, PDreftime = PDreftime)
+        single = DataInfo3D(x, diversity = "PD", datatype = "incidence_raw", PDtree = PDtree, PDreftime = PDreftime, PDtype = "meanPD")
         
-        single = single %>%
-          mutate(meanPD.obs = PD.obs / PDreftime, .after = PD.obs)
-        
+       
         if (by_pair == FALSE) {
           
           data_gamma = Reduce('+', x)
